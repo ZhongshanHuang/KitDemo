@@ -8,6 +8,7 @@
 
 import Foundation
 import UIKit.UIApplication
+import SQLite3
 
 
 /*
@@ -74,8 +75,8 @@ final class PoKVStorage {
     
     // MARK: - Properties - [public]
     let path: String
+    let storageType: StorageType
     var isErrorLogsEnable: Bool = true
-
     
     // MARK: - Properties - [private]
     private let _dbPath: String
@@ -92,10 +93,12 @@ final class PoKVStorage {
     
     
     // MARK: - Initializer
-    init(path: String) {
+    init(path: String, storageType: StorageType) {
         guard path.count > 0 || path.count <= kMaxPathLength else {
             fatalError("PoKVStorage init error: invalid path: [\(path)].")
         }
+        
+        self.storageType = storageType
         self.path = path
         self._dataPath = (path as NSString).appendingPathComponent(kDataDirectoryName)
         self._trashPath = (path as NSString).appendingPathComponent(kTrashDirectoryName)
@@ -146,8 +149,9 @@ final class PoKVStorage {
     @discardableResult
     func saveItem(with key: String, value: Data, filename: String? = nil, extendedData: Data? = nil) -> Bool {
         if key.isEmpty || value.isEmpty { return false }
+        if storageType == .file && filename.isEmpty { return false }
         
-        if filename != nil {
+        if !filename.isEmpty {
             if !_fileWrite(with: key, data: value) { return false }
             if !_dbSave(key: key, value: nil, filename: filename, extendedData: extendedData) {
                 _fileDelete(with: filename!)
@@ -155,6 +159,11 @@ final class PoKVStorage {
             }
             return true
         } else {
+            if storageType != .sqlite {
+                if let filename = _dbGetFilename(with: key) {
+                    _fileDelete(with: filename)
+                }
+            }
             return _dbSave(key: key, value: value, filename: nil, extendedData: extendedData)
         }
     }
@@ -167,38 +176,57 @@ final class PoKVStorage {
     func removeItem(for key: String) -> Bool {
         if key.isEmpty { return false }
         
-        if let filename = _dbGetFilename(with: key) {
-            _fileDelete(with: filename)
+        switch storageType {
+        case .sqlite:
+            return _dbDeleteItem(with: key)
+        case .file, .mixed:
+            if let filename = _dbGetFilename(with: key) {
+                _fileDelete(with: filename)
+            }
+            return _dbDeleteItem(with: key)
         }
-        return _dbDeleteItem(with: key)
     }
     
     func removeItem(for keys: [String]) -> Bool {
         if keys.isEmpty { return false }
         
-        if let filenames = _dbGetFilenameWithkeys(keys) {
-            for filename in filenames {
-                _fileDelete(with: filename)
+        switch storageType {
+        case .sqlite:
+            return _dbDeleteItemWithkeys(keys)
+        case .file, .mixed:
+                    if let filenames = _dbGetFilenameWithkeys(keys) {
+                for filename in filenames {
+                    _fileDelete(with: filename)
+                }
             }
+            return _dbDeleteItemWithkeys(keys)
         }
-        return _dbDeleteItemWithkeys(keys)
     }
     
     func removeItemsLargeThan(_ size: Int) -> Bool {
         if size == Int.max { return true }
         if size <= 0 { return removeAllItems() }
         
-        if let filenames = _dbGetFilenamesWithSizeLargerThan(size) {
-            for filename in filenames {
-                if !_fileDelete(with: filename) {
-                    return false
+        switch storageType {
+        case .sqlite:
+            if _dbDeleteItemsWithSizeLargerThan(size) {
+                _dbCheckPoint()
+                return true
+            }
+        case .file, .mixed:
+            if let filenames = _dbGetFilenamesWithSizeLargerThan(size) {
+                for filename in filenames {
+                    if !_fileDelete(with: filename) {
+                        return false
+                    }
                 }
             }
+            if _dbDeleteItemsWithSizeLargerThan(size) {
+                _dbCheckPoint()
+                return true
+            }
         }
-        if _dbDeleteItemsWithSizeLargerThan(size) {
-            _dbCheckPoint()
-        }
-        return true
+        return false
     }
     
     @discardableResult
@@ -206,17 +234,28 @@ final class PoKVStorage {
         if time <= 0 { return true }
         if time == Int.max { return removeAllItems() }
         
-        if let filenames = _dbGetFilenamesWithTimeEarlierThan(time) {
-            for filename in filenames {
-                if !_fileDelete(with: filename) {
-                    return false
+        switch storageType {
+        case .sqlite:
+            if _dbDeleteItemsWithTimeEarlierThan(time) {
+                _dbCheckPoint()
+                return true
+            }
+        case .file, .mixed:
+            if let filenames = _dbGetFilenamesWithTimeEarlierThan(time) {
+                for filename in filenames {
+                    if !_fileDelete(with: filename) {
+                        return false
+                    }
                 }
             }
+            if _dbDeleteItemsWithTimeEarlierThan(time) {
+                _dbCheckPoint()
+                return true
+            }
+
         }
-        if _dbDeleteItemsWithTimeEarlierThan(time) {
-            _dbCheckPoint()
-        }
-        return true
+        
+        return false
     }
     
     @discardableResult
@@ -366,28 +405,46 @@ final class PoKVStorage {
     func getItemValue(for key: String) -> Data? {
         if key.isEmpty { return nil }
         
-        var value: Data?
-        if let filename = _dbGetFilename(with: key) {
-            value = _fileRead(with: filename)
-            if value == nil {
-                _dbDeleteItem(with: key)
-            }
-        } else {
-            value = _dbGetValue(with: key)
+        var data: Data?
+        switch storageType {
+        case .file:
+           if let filename = _dbGetFilename(with: key) {
+               data = _fileRead(with: filename)
+               if data == nil {
+                   _dbDeleteItem(with: key)
+               }
+           }
+        case .sqlite:
+           data = _dbGetValue(with: key)
+        case .mixed:
+           if let filename = _dbGetFilename(with: key) {
+               data = _fileRead(with: filename)
+               if data == nil {
+                   _dbDeleteItem(with: key)
+               }
+           } else {
+               data = _dbGetValue(with: key)
+           }
         }
-        return value
+
+        if data != nil {
+            _dbUpdateAccessTime(with: key)
+        }
+        return data
     }
     
     func getItemForKeys(_ keys: [String]) -> [PoKVStorageItem]? {
         if keys.isEmpty { return nil }
         
         if var items = _dbGetItemWithKeys(keys, excludeInlineData: false) {
-            for (idx, item) in items.reversed().enumerated() {
-                if let filename = item.filename {
-                    item.value = _fileRead(with: filename)
-                    if item.value == nil {
-                        _dbDeleteItem(with: item.key)
-                        items.remove(at: idx)
+            if storageType != .sqlite {
+                for (idx, item) in items.reversed().enumerated() {
+                    if let filename = item.filename {
+                        item.value = _fileRead(with: filename)
+                        if item.value == nil {
+                            _dbDeleteItem(with: item.key)
+                            items.remove(at: idx)
+                        }
                     }
                 }
             }
@@ -599,7 +656,12 @@ extension PoKVStorage {
     }
     
     private func _dbInitialize() -> Bool {
-        let sql = "pragma journal_mode = wal; pragma synchronous = normal; create table if not exists manifest (key text, filename text, size integer, inline_data blob, modification_time integer, last_access_time integer, extended_data blob, primary key(key)); create index if not exists last_access_time_idx on manifest(last_access_time);"
+        let sql = """
+                    pragma journal_mode = wal;
+                    pragma synchronous = normal;
+                    create table if not exists manifest (key text, filename text, size integer, inline_data blob, modification_time integer, last_access_time integer, extended_data blob, primary key(key));
+                    create index if not exists last_access_time_idx on manifest(last_access_time);
+                    """
         return _dbExecute(sql)
     }
     
@@ -615,11 +677,12 @@ extension PoKVStorage {
         var pError: UnsafeMutablePointer<Int8>?
         let result = sqlite3_exec(_db, sql, nil, nil, &pError)
         if pError != nil {
-            let errmsg = String(cString: pError!)
-            PoDebugPrint("sqlite execute error: \(errmsg).")
+            if isErrorLogsEnable {
+                let errmsg = String(cString: pError!)
+                PoDebugPrint("sqlite execute error: \(errmsg).")
+            }
             sqlite3_free(pError)
         }
-        
         return result == SQLITE_OK
     }
     

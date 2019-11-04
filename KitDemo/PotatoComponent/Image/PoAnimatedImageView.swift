@@ -164,9 +164,9 @@ class PoAnimatedImageView: UIImageView {
     private var _totalLoop: Int = 0
     private var _isLoopEnd: Bool = false
     fileprivate var _buffer: Dictionary<Int, UIImage>!
-    private var _bufferMiss: Bool = false
-    fileprivate var _maxBufferCount: Int = 0
-    fileprivate var _incrBufferCount: Int = 0
+    private var _bufferMiss: Bool = false // 缓存是否命中
+    fileprivate var _maxBufferCount: Int = 0 // 最大缓存数
+    fileprivate var _incrBufferCount: Int = 0 // 当前缓存数
     
     override var image: UIImage? {
         get { return super.image }
@@ -498,7 +498,8 @@ class PoAnimatedImageView: UIImageView {
             _time += link.duration
             delay = image.animatedImageDuration(at: _curIndex)
             if _time < delay { return } // 当前这帧还没播放完
-            _time -= delay
+            // 当前帧已经播放完成，重置时间
+            _time = 0
             if nextIndex == 0 {
                 _curLoop += 1
                 if _totalLoop != 0 && _curLoop >= _totalLoop {
@@ -510,23 +511,19 @@ class PoAnimatedImageView: UIImageView {
             }
         }
         
-        var buffer = _buffer
         var bufferedImage: UIImage?
         var bufferIsFull = false
         
         _ = _lock.wait(timeout: .distantFuture) // Lock
-        bufferedImage = buffer?[nextIndex]
+        bufferedImage = _buffer?[nextIndex]
         if bufferedImage != nil {
-            if _incrBufferCount < _totalFrameCount { // 删掉当前帧，buffer只存后续播放的帧
-                buffer?.removeValue(forKey: nextIndex)
-            }
             willChangeValue(forKey: "currentAnimatedImageIndex")
             _curIndex = nextIndex
             didChangeValue(forKey: "currentAnimatedImageIndex")
             _curFrame = bufferedImage
             nextIndex = (_curIndex + 1) % _totalFrameCount
             _bufferMiss = false
-            if buffer?.count == _totalFrameCount {
+            if _buffer?.count == _totalFrameCount {
                 bufferIsFull = true
             }
         } else {
@@ -584,7 +581,6 @@ private class _PoAnimatedImageViewFetchOperation: Operation {
             _ = view._lock.wait(timeout: .distantFuture)
             let miss = (view._buffer[idx] == nil)
             view._lock.signal()
-            
             if miss {
                 var img = curImage?.animatedImageFrame(at: idx)
                 img = img?.imageByDecoded()

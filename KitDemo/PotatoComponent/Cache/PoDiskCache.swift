@@ -47,7 +47,15 @@ final class PoDiskCache {
     init(path: String, inlineThredhold: Int = 1024*20) { // 20kb
         self.path = path
         self.inlineThreshold = inlineThredhold
-        self._kv = PoKVStorage(path: path)
+        let type: PoKVStorage.StorageType
+        if inlineThredhold == 0 {
+            type = .file
+        } else if inlineThredhold == Int.max {
+            type = .sqlite
+        } else {
+            type = .mixed
+        }
+        self._kv = PoKVStorage(path: path, storageType: type)
     }
     
     

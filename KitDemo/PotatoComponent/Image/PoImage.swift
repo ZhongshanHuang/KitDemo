@@ -8,24 +8,7 @@
 
 import UIKit
 
-/**
- A YYImage object is a high-level way to display animated image data.
- 
- @discussion It is a fully compatible `UIImage` subclass. It extends the UIImage
- to support animated WebP, APNG and GIF format image data decoding. It also
- support NSCoding protocol to archive and unarchive multi-frame image data.
- 
- If the image is created from multi-frame image data, and you want to play the
- animation, try replace UIImageView with `YYAnimatedImageView`.
- 
- Sample Code:
- 
- // animation@3x.webp
- YYImage *image = [YYImage imageNamed:@"animation.webp"];
- YYAnimatedImageView *imageView = [YYAnimatedImageView alloc] initWithImage:image];
- [view addSubView:imageView];
- 
- */
+// 如果图片在Assets.xcassets中，无法正常加载
 
 class PoImage: UIImage {
     
@@ -107,7 +90,8 @@ class PoImage: UIImage {
         var scale = scale
         if scale <= 0 { scale = UIScreen.main.scale }
         
-        guard let decoder = try? PoImageDecoder.decoder(with: data as NSData, scale: scale), let image = decoder.frame(at: 0, decodeForDisplay: true)?.image else { return nil }
+        guard let decoder = try? PoImageDecoder.decoder(with: data as NSData, scale: scale),
+            let image = decoder.frame(at: 0, decodeForDisplay: true)?.image else { return nil }
         
         self.init(cgImage: image.cgImage!, scale: decoder.scale, orientation: image.imageOrientation)
         self.animatedImageType = decoder.type
@@ -150,11 +134,11 @@ class PoImage: UIImage {
 extension PoImage: PoAnimatable {
     
     var animatedImageFrameCount: Int {
-        return _decoder?.frameCount ?? NSNotFound
+        return _decoder?.frameCount ?? 0
     }
     
     var animatedImageLoopCount: Int {
-        return _decoder?.loopCount ?? NSNotFound
+        return _decoder?.loopCount ?? 0
     }
     
     var animatedImageBytesPerFrame: Int {

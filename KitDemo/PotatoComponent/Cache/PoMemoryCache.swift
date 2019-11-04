@@ -14,12 +14,12 @@ private let kPoMemoryCacheReleaseQueue: DispatchQueue = DispatchQueue(label: "co
 
 // MARK: - PoMemoryCache
 final class PoMemoryCache<Key, Value> where Key : Hashable {
-    
+
     // MARK: - Propertis - [Attribute]
-    
+
     /** The name of cache. Default is nil. */
     var name: String?
-    
+
     /** The number of objects in the cache. */
     var totalCount: Int {
         pthread_mutex_lock(&_lock)
@@ -27,7 +27,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         pthread_mutex_unlock(&_lock)
         return count
     }
-    
+
     /** The total cost of objects in the cache. */
     var totalCost: Int {
         pthread_mutex_lock(&_lock)
@@ -35,51 +35,51 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         pthread_mutex_unlock(&_lock)
         return cost
     }
-    
+
     // MARK: - Properties - [Limit]
-    
+
     /** The maximum number of objects the cache should hold. */
     var countLimit: Int = Int.max
-    
+
     /** The maximum  total cost that the cache can hold. */
     var costLimit: Int = Int.max
-    
+
     /** The maximum expiry time of objects in cache. */
     var ageLimit: TimeInterval = .greatestFiniteMagnitude
-    
+
     /** The auto trim check time interval in seconds. */
     var autoTrimInterval: TimeInterval = 5.0
-    
+
     /** If true, the cache will remove all objects when the app receives a memory warning. */
     var isShouldRemoveAllObjectsOnMemoryWarning: Bool = true
-    
+
     /** If true the cache will remove all objects when the app enter background. */
     var isShouldRemoveAllObjectsWhenEnteringBackground: Bool = true
-    
+
     /** The block will be executed when the app receive a memory warning. */
     var didReceiveMemoryWarningBlock: ((PoMemoryCache) -> Void)?
-    
+
     /** The block will be executed when the app enter background. */
     var didEnterBackgroundBlock: ((PoMemoryCache) -> Void)?
-    
+
     /** The key-value pair will be released on the main thread if true. otherwise on the background thread. */
     var isReleasedOnMainThread: Bool = false {
         didSet {
             _lru.isReleasedOnMainThread = isReleasedOnMainThread
         }
     }
-    
+
     /** The key-value pair will be released asynchronously if true. */
     var isReleasedAsynchronously: Bool = true {
         didSet {
             _lru.isReleasedAsynchronously = isReleasedAsynchronously
         }
     }
-    
+
     private var _lock: pthread_mutex_t = pthread_mutex_t()
     private let _lru: PoLinkedMap<Key, Value> = PoLinkedMap()
     private let _queue: DispatchQueue = DispatchQueue(label: "com.potato.cache.memory.access")
-    
+
     init() {
         pthread_mutex_init(&_lock, nil)
         _trimRecursively()
@@ -92,7 +92,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
                                                name: UIApplication.didEnterBackgroundNotification,
                                                object: nil)
     }
-    
+
     deinit {
         NotificationCenter.default.removeObserver(self,
                                                   name: UIApplication.didReceiveMemoryWarningNotification,
@@ -103,9 +103,9 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         _lru.removeAll()
         pthread_mutex_destroy(&_lock)
     }
-    
+
     // MARK: - Methods - [Access]
-    
+
     /// Return true, when the cache contain the key-value pair
     func containsObject(for key: Key) -> Bool {
         pthread_mutex_lock(&_lock)
@@ -115,7 +115,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         pthread_mutex_unlock(&_lock)
         return contains
     }
-    
+
     /// Return the value when the key-value pair exist, else will return nil
     func object(for key: Key) -> Value? {
         pthread_mutex_lock(&_lock)
@@ -129,7 +129,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
             return nil
         }
     }
-    
+
     /// The key-value pair will be stored.
     func setObject(_ anObject: Value, for key: Key, cost: Int = 0) {
         pthread_mutex_lock(&_lock)
@@ -147,13 +147,13 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
             nodeRef.initialize(to: node)
             _lru.insertNodeAtHead(nodeRef)
         }
-        
+
         if _lru.totalCost > costLimit {
             _queue.async {
                 self.trimToCost(self.costLimit)
             }
         }
-        
+
         if _lru.totalCount > countLimit {
             let nodeRef = _lru.removeTailNode()
             if _lru.isReleasedAsynchronously {
@@ -174,7 +174,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         }
         pthread_mutex_unlock(&_lock)
     }
-    
+
     func removeObject(for key: Key) {
         pthread_mutex_lock(&_lock)
         if let nodeRef = _lru.dic[key] {
@@ -198,21 +198,21 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         }
         pthread_mutex_unlock(&_lock)
     }
-    
+
     func removeAllObjects() {
         pthread_mutex_lock(&_lock)
         _lru.removeAll()
         pthread_mutex_unlock(&_lock)
     }
-    
+
     // MARK: - Methods - [Trim]
-    
+
     func trimToCount(_ count: Int) {
         if count == 0 {
             removeAllObjects()
             return
         }
-        
+
         var finish = false
         pthread_mutex_lock(&_lock)
         if count == 0 {
@@ -223,7 +223,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         }
         pthread_mutex_unlock(&_lock)
         if finish { return }
-        
+
         var holder: ContiguousArray<PoLinkedMap<Key, Value>.PoNodeRef> = []
         while !finish { // 相当于自旋锁
             if pthread_mutex_trylock(&_lock) == 0 {
@@ -239,7 +239,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
                 usleep(10 * 1000) //10 ms
             }
         }
-        
+
         let queue = _lru.isReleasedOnMainThread ? DispatchQueue.main : kPoMemoryCacheReleaseQueue
         queue.async {
             for nodeRef in holder {
@@ -248,7 +248,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
             }
         }
     }
-    
+
     func trimToCost(_ cost: Int) {
         var finish = false
         pthread_mutex_lock(&_lock)
@@ -260,7 +260,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         }
         pthread_mutex_unlock(&_lock)
         if finish { return }
-        
+
         var holder: ContiguousArray<PoLinkedMap<Key, Value>.PoNodeRef> = []
         while !finish {
             if pthread_mutex_trylock(&_lock) == 0 {
@@ -276,7 +276,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
                 usleep(10 * 1000) //10 ms
             }
         }
-        
+
         let queue = _lru.isReleasedOnMainThread ? DispatchQueue.main : kPoMemoryCacheReleaseQueue
         queue.async {
             for nodeRef in holder {
@@ -285,10 +285,10 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
             }
         }
     }
-    
+
     func trimToAge(_ age: TimeInterval) {
         if ageLimit == .greatestFiniteMagnitude { return } // default -1
-        
+
         var finish = false
         let now = CACurrentMediaTime()
         pthread_mutex_lock(&_lock)
@@ -300,7 +300,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         }
         pthread_mutex_unlock(&_lock)
         if finish { return }
-        
+
         var holder: ContiguousArray<PoLinkedMap<Key, Value>.PoNodeRef> = []
         while !finish {
             if pthread_mutex_trylock(&_lock) == 0 {
@@ -316,7 +316,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
                 usleep(10 * 1000) //10 ms
             }
         }
-        
+
         let queue = _lru.isReleasedOnMainThread ? DispatchQueue.main : kPoMemoryCacheReleaseQueue
         queue.async {
             for nodeRef in holder {
@@ -326,7 +326,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
         }
 
     }
-    
+
     private func _trimRecursively() {
         DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + autoTrimInterval) { [weak self] in
             guard let strongSelf = self else { return }
@@ -334,7 +334,7 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
             strongSelf._trimRecursively()
         }
     }
-    
+
     private func _trimInBackground() {
         _queue.async { [weak self] in
             guard let strongSelf = self else { return }
@@ -343,22 +343,22 @@ final class PoMemoryCache<Key, Value> where Key : Hashable {
             strongSelf.trimToAge(strongSelf.ageLimit)
         }
     }
-    
+
     // MARK: - Notification
-    
+
     @objc
     private func _appDidReceiveMemoryWarningNotification() {
         didReceiveMemoryWarningBlock?(self)
-        
+
         if isShouldRemoveAllObjectsOnMemoryWarning {
             removeAllObjects()
         }
     }
-    
+
     @objc
     private func _appDidEnterBackgroundNotification() {
         didEnterBackgroundBlock?(self)
-        
+
         if isShouldRemoveAllObjectsWhenEnteringBackground {
             removeAllObjects()
         }
@@ -376,7 +376,7 @@ struct PoLinkedMapNode<Key, Value> {
     var value: Value
     var cost: Int
     var time: TimeInterval
-    
+
     init(key: Key, value: Value, cost: Int, time: TimeInterval) {
         self.key = key
         self.value = value
@@ -389,28 +389,27 @@ struct PoLinkedMapNode<Key, Value> {
 // MARK: - PoLinkedMap
 
 final class PoLinkedMap<Key, Value> where Key : Hashable {
-    
-    typealias PoNode = PoLinkedMapNode<Key, Value>
-    typealias PoNodeRef = UnsafeMutablePointer<PoNode>
+
+    typealias PoNodeRef = UnsafeMutablePointer<PoLinkedMapNode<Key, Value>>
     
     
     // MARK: - Properties - [public]
     lazy var dic: Dictionary<Key, PoNodeRef> = [:]
     var totalCost: Int = 0
     var totalCount: Int = 0
-    
+
     fileprivate var _head: PoNodeRef?
     fileprivate var _tail: PoNodeRef?
-    
+
     var isReleasedOnMainThread: Bool = false
     var isReleasedAsynchronously: Bool = true
-    
+
     /// 确保nodeRef不在链表中，否则会导致内存泄漏问题
     func insertNodeAtHead(_ nodeRef: PoNodeRef) {
         dic[nodeRef.pointee.key] = nodeRef
         totalCost += nodeRef.pointee.cost
         totalCount += 1
-        
+
         if _head != nil {
             nodeRef.pointee.next = _head
             _head?.pointee.prev = nodeRef
@@ -420,10 +419,10 @@ final class PoLinkedMap<Key, Value> where Key : Hashable {
             _head = nodeRef
         }
     }
-    
+
     func bringNodeToHead(_ nodeRef: PoNodeRef) {
         if _head == nodeRef { return }
-        
+
         if _tail == nodeRef {
             _tail = nodeRef.pointee.prev
             _tail?.pointee.next = nil
@@ -431,40 +430,40 @@ final class PoLinkedMap<Key, Value> where Key : Hashable {
             nodeRef.pointee.next?.pointee.prev = nodeRef.pointee.prev
             nodeRef.pointee.prev?.pointee.next = nodeRef.pointee.next
         }
-        
+
         nodeRef.pointee.next = _head
         nodeRef.pointee.prev = nil
         _head?.pointee.prev = nodeRef
         _head = nodeRef
     }
-    
+
     func remove(_ nodeRef: PoNodeRef) {
         dic.removeValue(forKey: nodeRef.pointee.key)
         totalCost -= nodeRef.pointee.cost
         totalCount -= 1
-        
+
         if nodeRef.pointee.next != nil {
             nodeRef.pointee.next?.pointee.prev = nodeRef.pointee.prev
         }
-        
+
         if nodeRef.pointee.prev != nil {
             nodeRef.pointee.prev?.pointee.next = nodeRef.pointee.next
         }
-        
+
         if _head == nodeRef {
             _head = nodeRef.pointee.next
         }
-        
+
         if _tail == nodeRef {
             _tail = nodeRef.pointee.prev
         }
     }
-    
+
     func removeTailNode() -> PoNodeRef? {
         if _tail == nil { return nil }
         let tail = _tail!
         dic.removeValue(forKey: tail.pointee.key)
-        
+
         totalCost -= _tail!.pointee.cost
         totalCount -= 1
         if _head == _tail {
@@ -474,17 +473,17 @@ final class PoLinkedMap<Key, Value> where Key : Hashable {
             _tail = tail.pointee.prev
             _tail?.pointee.next = nil
         }
-        
+
         return tail
     }
-    
+
     func removeAll() {
         totalCost = 0
         totalCount = 0
         _head = nil
         _tail = nil
         if dic.count > 0 {
-            var holder = dic
+            let holder = dic
             dic = [:]
             if isReleasedAsynchronously {
                 let queue = isReleasedOnMainThread ? DispatchQueue.main : kPoMemoryCacheReleaseQueue
@@ -512,19 +511,8 @@ final class PoLinkedMap<Key, Value> where Key : Hashable {
 }
 
 
-// MARK: 以下是使用class作为节点的实现，与struct作为节点性能对比差很多，所以注释掉
+// MARK: 以下是使用class作为节点的实现，与struct作为节点性能对比差很多，所以注释掉。
 
-////
-////  PoMemoryCache.swift
-////  KitDemo
-////
-////  Created by 黄中山 on 2018/6/10.
-////  Copyright © 2018年 黄中山. All rights reserved.
-////
-//
-//import UIKit
-//
-//
 //let PoMemoryCacheReleaseQueue: DispatchQueue = DispatchQueue(label: "com.potato.cache.memory.release", qos: .utility)
 //
 //
@@ -779,11 +767,11 @@ final class PoLinkedMap<Key, Value> where Key : Hashable {
 //    }
 //}
 //
-
+//
 //// MARK: - PoLinkedMapNode
 //final class PoLinkedMapNode<Key, Value> {
-//    unowned var prev: PoLinkedMapNode?
-//    unowned var next: PoLinkedMapNode?
+//    unowned(unsafe) var prev: PoLinkedMapNode?
+//    unowned(unsafe) var next: PoLinkedMapNode?
 //
 //    var key: Key
 //    var value: Value
@@ -818,7 +806,7 @@ final class PoLinkedMap<Key, Value> where Key : Hashable {
 //    var isReleasedAsynchronously: Bool = true
 //
 //    deinit {
-//        print("die on \(pthread_self())")
+//        debugPrint("die on \(pthread_self().pointee)")
 //    }
 //
 //    func insertNodeAtHead(_ node: PoNode) {

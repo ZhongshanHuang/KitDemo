@@ -9,11 +9,12 @@
 import UIKit
 
 extension UIImage {
-    
     private struct PoImageCoderKey {
         static let isDecodedForDisplayKey: String = ""
-//        static let imageDataRepresentationKey: String = ""
     }
+}
+
+extension UIImage {
     
     var isDecodedForDisplay: Bool {
         get {
@@ -25,11 +26,11 @@ extension UIImage {
         }
     }
     
-    func imageByDecoded() -> UIImage {
+    func imageByDecoded() -> Self {
         if self.isDecodedForDisplay { return self }
         guard let imageRef = self.cgImage else { return self }
         guard let newImageRef = PoCGImageCreateDecodedCopy(imageRef: imageRef, decodeForDispaly: true) else { return self }
-        let newImage = UIImage(cgImage: newImageRef, scale: self.scale, orientation: self.imageOrientation)
+        let newImage = type(of: self).init(cgImage: newImageRef, scale: self.scale, orientation: self.imageOrientation)
         newImage.isDecodedForDisplay = true
         return newImage
     }

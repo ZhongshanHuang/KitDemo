@@ -42,7 +42,6 @@
 		6C967C6E20CD7FCB00FB82DA /* PoMemoryCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C967C6D20CD7FCB00FB82DA /* PoMemoryCache.swift */; };
 		6C967C7720CE77DB00FB82DA /* PoCollectionViewMasonryLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C967C7620CE77DB00FB82DA /* PoCollectionViewMasonryLayout.swift */; };
 		6C967C7C20CEC58300FB82DA /* PoFPSLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C967C7B20CEC58300FB82DA /* PoFPSLabel.swift */; };
-		6C9C1C8420DFA49600229C21 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 6C9C1C8320DFA49600229C21 /* libsqlite3.tbd */; };
 		6CA3E1FA214AB81D0068C498 /* PoTextContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA3E1F9214AB81D0068C498 /* PoTextContainer.swift */; };
 		6CA7AB612116810600ED260E /* PoTextUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA7AB602116810600ED260E /* PoTextUtilities.swift */; };
 		6CB04BAB20C51D570051290B /* CTView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CB04BAA20C51D570051290B /* CTView.swift */; };
@@ -174,7 +173,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6C9C1C8420DFA49600229C21 /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -304,7 +302,6 @@
 			isa = PBXGroup;
 			children = (
 				6CE1827B20BAD88F00317E57 /* PoHelper.swift */,
-				6CE1827D20BB023900317E57 /* Quartz */,
 				6CE1827E20BB023900317E57 /* UIkit */,
 				6CE1827F20BB023900317E57 /* Foundation */,
 			);
@@ -325,13 +322,6 @@
 				92767CA922EED49A0025F1BB /* PoWeakProxy.swift */,
 			);
 			path = Utility;
-			sourceTree = "<group>";
-		};
-		6CE1827D20BB023900317E57 /* Quartz */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Quartz;
 			sourceTree = "<group>";
 		};
 		6CE1827E20BB023900317E57 /* UIkit */ = {

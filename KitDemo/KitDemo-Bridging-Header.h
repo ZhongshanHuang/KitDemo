@@ -9,6 +9,5 @@
 #ifndef KitDemo_Bridging_Header_h
 #define KitDemo_Bridging_Header_h
 
-#import <sqlite3.h>
 
 #endif /* KitDemo_Bridging_Header_h */

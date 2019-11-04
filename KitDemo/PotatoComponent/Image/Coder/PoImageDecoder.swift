@@ -205,7 +205,7 @@ final class PoImageDecoder {
     
     // MARK: - Helper
     
-    /// 防止Data的写时复制产生两份data数据，所以采用NSData
+    /// 防止Data的写时复制产生的副作用，所以采用NSData
     private func _update(_ data: NSData, final: Bool) -> Bool {
         if isFinalized { return false }
         if self.data != nil && data.count < self.data!.count {

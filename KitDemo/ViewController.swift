@@ -22,9 +22,29 @@ class ViewController: UIViewController {
         tableView.tableFooterView = UIView()
         tableView.frame = view.bounds
         view.addSubview(tableView)
-        
-        tableView.register(Cell.self, forCellReuseIdentifier: "cell")
 
+        tableView.register(Cell.self, forCellReuseIdentifier: "cell")
+    }
+    
+    private func test() {
+//        let path = Bundle.main.path(forResource: "apng", ofType: "png")
+//        let data = try? Data(contentsOf: URL(fileURLWithPath: path!))
+//
+//        let memoryCache = PoMemoryCache<String, Data>()
+//
+//        PoBenchmark_os(excute: {
+//            for idx in 0...10000 {
+//                memoryCache.setObject(data!, for: "\(idx)")
+//            }
+//        })
+//
+//        print("finish")
+        
+//        let image = PoImage(named: "apng.png")
+//        let imageView = PoAnimatedImageView(image: PoImage(named: "huocai.gif"))
+//        imageView.image = image
+//        imageView.center = view.center
+//        view.addSubview(imageView)
     }
     
 }
@@ -116,3 +136,18 @@ enum DemoType: String, CaseIterable {
     case ligature
 }
 
+// MARK: - downsample large images for display at smaller size
+
+func downsample(imageAt imageURL: URL, to pointSize: CGSize, scale: CGFloat) -> UIImage {
+    let imageSourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+    let imageSource = CGImageSourceCreateWithURL(imageURL as CFURL, imageSourceOptions)!
+    
+    let maxDimentionInPixels = max(pointSize.width, pointSize.height)
+    let downsampleOptions = [
+        kCGImageSourceShouldCacheImmediately: true,
+        kCGImageSourceCreateThumbnailFromImageAlways: true,
+        kCGImageSourceCreateThumbnailWithTransform: true,
+        kCGImageSourceThumbnailMaxPixelSize: maxDimentionInPixels] as CFDictionary
+    let downsampleImage = CGImageSourceCreateImageAtIndex(imageSource, 0, downsampleOptions)!
+    return UIImage(cgImage: downsampleImage)
+}
