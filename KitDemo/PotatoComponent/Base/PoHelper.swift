@@ -56,9 +56,9 @@ func Dispatch_sync_on_main_queue(block: @escaping () -> Void) {
 }
 
 /// debug log
-func PoDebugPrint<T>(_ message: T, file: String = #file, line: Int = #line, method: String = #function) {
+func PoDebugPrint<T>(_ message: T) {
     #if DEBUG
-    print("\((file as NSString).lastPathComponent)[\(line)], \(method): \(message)")
+    print("\((#file as NSString).lastPathComponent)[\(#line)], \(#function): \(message)")
     #endif
 }
 

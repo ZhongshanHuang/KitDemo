@@ -8,6 +8,36 @@
 
 import UIKit
 
+class PoImageFrame: NSCopying {
+    var index: Int = 0
+    var width: Int = 0
+    var height: Int = 0
+    var offsetX: Int = 0
+    var offsetY: Int = 0
+    var duration: TimeInterval = 0
+    var dispose: APNGDisposeMethod = .none
+    var blend: APNGBlendOperation = .source
+    var image: UIImage?
+    
+    required init(image: UIImage? = nil) {
+        self.image = image
+    }
+    
+    func copy(with zone: NSZone? = nil) -> Any {
+        let frame = type(of: self).init()
+        frame.index = index
+        frame.width = width
+        frame.height = height
+        frame.offsetX = offsetX
+        frame.offsetY = offsetY
+        frame.duration = duration
+        frame.dispose = dispose
+        frame.blend = blend
+        frame.image = image
+        return frame
+    }
+}
+
 private class _PoImageDecoderFrame: PoImageFrame {
     
     /// whether frame has alpha
@@ -33,38 +63,6 @@ extension PoImageDecoder {
         case invalidData
     }
 }
-
-/**
- An image decoder to decode image data.
- 
- @discussion This class supports decoding animated WebP, APNG, GIF and system
- image format such as PNG, JPG, JP2, BMP, TIFF, PIC, ICNS and ICO. It can be used
- to decode complete image data, or to decode incremental image data during image
- download. This class is thread-safe.
- 
- Example:
- 
- // Decode single image:
- NSData *data = [NSData dataWithContentOfFile:@"/tmp/image.webp"];
- YYImageDecoder *decoder = [YYImageDecoder decoderWithData:data scale:2.0];
- UIImage *image = [decoder frameAtIndex:0 decodeForDisplay:YES].image;
- 
- // Decode image during download:
- NSMutableData *data = [NSMutableData new];
- YYImageDecoder *decoder = [[YYImageDecoder alloc] initWithScale:2.0];
- while(newDataArrived) {
- [data appendData:newData];
- [decoder updateData:data final:NO];
- if (decoder.frameCount > 0) {
- UIImage image = [decoder frameAtIndex:0 decodeForDisplay:YES].image;
- // progressive display...
- }
- }
- [decoder updateData:data final:YES];
- UIImage *image = [decoder frameAtIndex:0 decodeForDisplay:YES].image;
- // final display...
- 
- */
 
 final class PoImageDecoder {
     
@@ -243,7 +241,7 @@ final class PoImageDecoder {
         if !needBlend {
             guard var imageRef = _newUnblendedImage(at: index, extendToCanvas: extendToCanvas, decoded: &decoded) else { return nil }
             if decodeForDisplay && !decoded {
-                if let imageRefDecoded = PoCGImageCreateDecodedCopy(imageRef: imageRef, decodeForDispaly: true) {
+                if let imageRefDecoded = imageRef.copy(decodeForDispaly: true) {
                     imageRef = imageRefDecoded
                     decoded = true
                 }
@@ -434,9 +432,10 @@ final class PoImageDecoder {
             CGImageSourceUpdateData(source!, data!, isFinalized)
         }
         
-        guard let source = source else { return }
+        guard let source1 = source else { return }
         
-        frameCount = CGImageSourceGetCount(source)
+        frameCount = CGImageSourceGetCount(source!)
+        
         if frameCount == 0 { return }
         
         if !isFinalized { // ignore multi-frame before finalized
@@ -446,7 +445,7 @@ final class PoImageDecoder {
                 frameCount = 1
             }
             if type == .gif { // get gif loop count
-                if let properties = CGImageSourceCopyProperties(source, nil) as? Dictionary<CFString, Any>,
+                if let properties = CGImageSourceCopyProperties(source1, nil) as? Dictionary<CFString, Any>,
                     let gif = properties[kCGImagePropertyGIFDictionary] as? Dictionary<CFString, Any>,
                     let loop = gif[kCGImagePropertyGIFLoopCount] as? Int {
                     loopCount = loop
@@ -466,7 +465,7 @@ final class PoImageDecoder {
             frame.isFullSize = true
             frames.append(frame)
             
-            if let properties = CGImageSourceCopyPropertiesAtIndex(source, i, nil) as? Dictionary<CFString, Any> {
+            if let properties = CGImageSourceCopyPropertiesAtIndex(source1, i, nil) as? Dictionary<CFString, Any> {
                 var duration: TimeInterval = 0
                 let width = properties[kCGImagePropertyPixelWidth] as! Int
                 let height = properties[kCGImagePropertyPixelHeight] as! Int
@@ -516,7 +515,7 @@ final class PoImageDecoder {
                 let width = imageRef!.width
                 let height = imageRef!.height
                 if self.width == width && self.height == height {
-                    if let imageRefExtended = PoCGImageCreateDecodedCopy(imageRef: imageRef!, decodeForDispaly: true) {
+                    if let imageRefExtended = imageRef?.copy(decodeForDispaly: true) {
                         imageRef = imageRefExtended
                         decoded?.pointee = true
                     }

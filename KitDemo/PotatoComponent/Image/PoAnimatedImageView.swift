@@ -47,26 +47,6 @@ extension PoAnimatedImageView {
 
 private let kBufferSize = 10 * 1024 * 1024 // 10MB
 
-/**
- An image view for displaying animated image.
- 
- @discussion It is a fully compatible `UIImageView` subclass.
- If the `image` or `highlightedImage` property adopt to the `YYAnimatedImage` protocol,
- then it can be used to play the multi-frame animation. The animation can also be
- controlled with the UIImageView methods `-startAnimating`, `-stopAnimating` and `-isAnimating`.
- 
- This view request the frame data just in time. When the device has enough free memory,
- this view may cache some or all future frames in an inner buffer for lower CPU cost.
- Buffer size is dynamically adjusted based on the current state of the device memory.
- 
- Sample Code:
- 
- // ani@3x.gif
- YYImage *image = [YYImage imageNamed:@"ani"];
- YYAnimatedImageView *imageView = [YYAnimatedImageView alloc] initWithImage:image];
- [view addSubView:imageView];
- */
-
 class PoAnimatedImageView: UIImageView {
     
     // MARK: - Properties - [public]

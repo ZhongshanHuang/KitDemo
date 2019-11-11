@@ -16,14 +16,19 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        tableView.estimatedRowHeight = 0
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.tableFooterView = UIView()
-        tableView.frame = view.bounds
-        view.addSubview(tableView)
-
-        tableView.register(Cell.self, forCellReuseIdentifier: "cell")
+//        tableView.estimatedRowHeight = 0
+//        tableView.dataSource = self
+//        tableView.delegate = self
+//        tableView.tableFooterView = UIView()
+//        tableView.frame = view.bounds
+//        view.addSubview(tableView)
+//
+//        tableView.register(Cell.self, forCellReuseIdentifier: "cell")
+        test()
+//        let path = Bundle.main.path(forResource: "dribbble64_imageio", ofType: "png")
+//        let image = UIImage(contentsOfFile: path!)
+//        let new = PoCGImageCreateCopyWithOrientation(imageRef: image!.cgImage!, orientation: .left)
+//        print(new)
     }
     
     private func test() {
@@ -45,6 +50,23 @@ class ViewController: UIViewController {
 //        imageView.image = image
 //        imageView.center = view.center
 //        view.addSubview(imageView)
+        
+        let encode = PoImageEncoder(type: .png)
+        for i in 1...4 {
+//            let path = Bundle.main.path(forResource: "\(i)", ofType: ".png")
+            encode?.add(image: UIImage(named: "p\(i).png")!, duration: 1)
+        }
+        
+//        var path = NSSearchPathForDirectoriesInDomains(.libraryDirectory, .userDomainMask, true).first!
+//        path =  (path as NSString).appendingPathComponent("imageData")
+//        let data = try! Data(contentsOf: URL(fileURLWithPath: path))
+        
+        let image = PoImage(data: encode!.encode()!)
+        let imageView = PoAnimatedImageView()
+        imageView.frame.size = CGSize(width: 300, height: 300)
+        imageView.image = image
+        imageView.center = view.center
+        view.addSubview(imageView)
     }
     
 }

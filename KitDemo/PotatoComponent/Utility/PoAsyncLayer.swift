@@ -98,71 +98,6 @@ final class PoAsyncLayer: CALayer {
             PoAsyncLayerGetDisplayQueue().async {
                 if isCancelled() { return }
                 
-                var image: UIImage?
-                if #available(iOS 10, *) {
-                    var format: UIGraphicsImageRendererFormat
-                    if #available(iOS 11, *) {
-                        format = UIGraphicsImageRendererFormat.preferred()
-                    } else {
-                        format = UIGraphicsImageRendererFormat.default()
-                    }
-                    format.opaque = opaque
-                    let renderer = UIGraphicsImageRenderer(size: size, format: format)
-                    image = renderer.image { (rendererCtx) in
-                        let context = rendererCtx.cgContext
-                        if opaque {
-                            context.saveGState()
-                            defer { context.restoreGState()}
-                            if let color = backColor, color.alpha == 1 {
-                                context.setFillColor(color)
-                            } else {
-                                context.setFillColor(UIColor.white.cgColor)
-                            }
-                            context.addRect(CGRect(origin: .zero, size: CGSize(width: size.width * scale, height: size.height * scale)))
-                            context.fillPath()
-                        }
-                        
-                        task.display?(context, size, isCancelled)
-                    }
-                } else {
-                    UIGraphicsBeginImageContextWithOptions(size, opaque, scale)
-                    let context = UIGraphicsGetCurrentContext()!
-                    if opaque {
-                        context.saveGState()
-                        if let color = backColor, color.alpha == 1 {
-                            context.setFillColor(color)
-                        } else {
-                            context.setFillColor(UIColor.white.cgColor)
-                        }
-                        context.addRect(CGRect(origin: .zero, size: CGSize(width: size.width * scale, height: size.height * scale)))
-                        context.fillPath()
-                        context.restoreGState()
-                    }
-                    task.display?(context, size, { return false })
-                    image = UIGraphicsGetImageFromCurrentImageContext()
-                    UIGraphicsEndImageContext()
-                }
-                
-                if isCancelled() {
-                    DispatchQueue.main.async {
-                        task.didDisplay?(self, false)
-                    }
-                    return
-                }
-                DispatchQueue.main.async {
-                    if isCancelled() {
-                        task.didDisplay?(self, false)
-                    } else {
-                        self.contents = image?.cgImage
-                        task.didDisplay?(self, true)
-                    }
-                }
-            }
-        } else {
-            _sentinel.increase()
-            
-            var image: UIImage?
-            if #available(iOS 10, *) {
                 var format: UIGraphicsImageRendererFormat
                 if #available(iOS 11, *) {
                     format = UIGraphicsImageRendererFormat.preferred()
@@ -171,7 +106,7 @@ final class PoAsyncLayer: CALayer {
                 }
                 format.opaque = opaque
                 let renderer = UIGraphicsImageRenderer(size: size, format: format)
-                image = renderer.image { (rendererCtx) in
+                let image = renderer.image { (rendererCtx) in
                     let context = rendererCtx.cgContext
                     if opaque {
                         context.saveGState()
@@ -185,13 +120,40 @@ final class PoAsyncLayer: CALayer {
                         context.fillPath()
                     }
                     
-                    task.display?(context, size, { return false })
+                    task.display?(context, size, isCancelled)
                 }
+                
+                if isCancelled() {
+                    DispatchQueue.main.async {
+                        task.didDisplay?(self, false)
+                    }
+                    return
+                }
+                DispatchQueue.main.async {
+                    if isCancelled() {
+                        task.didDisplay?(self, false)
+                    } else {
+                        self.contents = image.cgImage
+                        task.didDisplay?(self, true)
+                    }
+                }
+            }
+        } else {
+            _sentinel.increase()
+            
+            var format: UIGraphicsImageRendererFormat
+            if #available(iOS 11, *) {
+                format = UIGraphicsImageRendererFormat.preferred()
             } else {
-                UIGraphicsBeginImageContextWithOptions(size, opaque, scale)
-                let context = UIGraphicsGetCurrentContext()!
+                format = UIGraphicsImageRendererFormat.default()
+            }
+            format.opaque = opaque
+            let renderer = UIGraphicsImageRenderer(size: size, format: format)
+            let image = renderer.image { (rendererCtx) in
+                let context = rendererCtx.cgContext
                 if opaque {
                     context.saveGState()
+                    defer { context.restoreGState()}
                     if let color = backColor, color.alpha == 1 {
                         context.setFillColor(color)
                     } else {
@@ -199,14 +161,11 @@ final class PoAsyncLayer: CALayer {
                     }
                     context.addRect(CGRect(origin: .zero, size: CGSize(width: size.width * scale, height: size.height * scale)))
                     context.fillPath()
-                    context.restoreGState()
                 }
+                
                 task.display?(context, size, { return false })
-                image = UIGraphicsGetImageFromCurrentImageContext()
-                UIGraphicsEndImageContext()
             }
-            
-            contents = image?.cgImage
+            contents = image.cgImage
             task.didDisplay?(self, true)
         }
     }

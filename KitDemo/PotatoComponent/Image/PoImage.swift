@@ -57,7 +57,7 @@ class PoImage: UIImage {
         var scale = 1
         
         // If no extension, guess by system supported (same as UIImage).
-        let exts = ext.isEmpty ? ["", "png", "jpeg", "jpg", "gif", "webp", "apng"] : [ext]
+        let exts = ext.isEmpty ? ["", "png", "jpeg", "jpg", "gif", "apng", "webp"] : [ext]
         for s in Bundle.preferredScales {
             scale = s
             let scaleName = res.appendingNameScale(scale)

@@ -6,33 +6,6 @@
 //  Copyright © 2019 黄中山. All rights reserved.
 //
 
-
-/**
- An image encoder to encode image to data.
- 
- @discussion It supports encoding single frame image with the type defined in YYImageType.
- It also supports encoding multi-frame image with GIF, APNG and WebP.
- 
- Example:
- 
- YYImageEncoder *jpegEncoder = [[YYImageEncoder alloc] initWithType:YYImageTypeJPEG];
- jpegEncoder.quality = 0.9;
- [jpegEncoder addImage:image duration:0];
- NSData *jpegData = [jpegEncoder encode];
- 
- YYImageEncoder *gifEncoder = [[YYImageEncoder alloc] initWithType:YYImageTypeGIF];
- gifEncoder.loopCount = 5;
- [gifEncoder addImage:image0 duration:0.1];
- [gifEncoder addImage:image1 duration:0.15];
- [gifEncoder addImage:image2 duration:0.2];
- NSData *gifData = [gifEncoder encode];
- 
- @warning It just pack the images together when encoding multi-frame image. If you
- want to reduce the image file size, try imagemagick/ffmpeg for GIF and WebP,
- and apngasm for APNG.
- */
-
-
 import UIKit
 import zlib
 
@@ -59,17 +32,13 @@ final class PoImageEncoder {
     
     init?(type: PoImageType) {
         self.type = type
-        if type == .unknown || type == .other || type == .webp {
-            return nil
-        }
-        
         switch type {
         case .jpeg, .jpeg2000:
             quality = 0.9
         case .tiff, .bmp, .gif, .ico, .icns, .png:
             quality = 1
-        default:
-            break
+        case .unknown, .webp:
+            return nil
         }
     }
     
@@ -213,7 +182,7 @@ final class PoImageEncoder {
             
             if var image = imageSrc as? UIImage {
                 if image.imageOrientation != .up && image.cgImage != nil {
-                    if let rotated = PoCGImageCreateCopyWithOrientation(imageRef: image.cgImage!, orientation: image.imageOrientation) {
+                    if let rotated = image.cgImage?.copy(withOrientation: image.imageOrientation) {
                         image = UIImage(cgImage: rotated)
                     }
                 }
@@ -244,10 +213,10 @@ final class PoImageEncoder {
         
         guard let imageRef = image?.cgImage else { return nil }
         if image!.imageOrientation != .up {
-            return PoCGImageCreateCopyWithOrientation(imageRef: imageRef, orientation: image!.imageOrientation)
+            return imageRef.copy(withOrientation: image!.imageOrientation)
         }
         if decoded {
-            return PoCGImageCreateDecodedCopy(imageRef: imageRef, decodeForDispaly: true)
+            return imageRef.copy(decodeForDispaly: true)
         }
         return imageRef
     }
@@ -255,7 +224,7 @@ final class PoImageEncoder {
     private func _encodeWithImageIO() -> Data? {
         let data = CFDataCreateMutable(kCFAllocatorDefault, 0)!
         let count = type == .gif ? _images.count : 1
-        let destination = CGImageDestinationCreateWithData(data, PoImageTypeToUTType(type)!, count, nil)
+        let destination = CGImageDestinationCreateWithData(data, type.uiType!, count, nil)
         var suc = false
         if let destination = destination {
             _encodeImage(with: destination, imageCount: count)
@@ -271,7 +240,7 @@ final class PoImageEncoder {
     private func _encodeWithImageIO(path: String) -> Bool {
         let count = type == .gif ? _images.count : 1
         let destination = CGImageDestinationCreateWithURL(URL(fileURLWithPath: path) as CFURL,
-                                                          PoImageTypeToUTType(type)!,
+                                                          type.uiType!,
                                                           count,
                                                           nil)
         var suc = false
@@ -295,7 +264,7 @@ final class PoImageEncoder {
             pngSizes.append(size)
             if canvasWidth < decoded.width { canvasWidth = decoded.width }
             if canvasHeight < decoded.height { canvasHeight = decoded.height }
-            guard let frameData = PoCGImageCreateEncodedData(imageRef: decoded, type: .png, quality: 1) else { return nil }
+            guard let frameData = decoded.encodedData(type: .png, quality: 1) else { return nil }
             pngDatas.append(frameData)
         }
         
@@ -305,7 +274,7 @@ final class PoImageEncoder {
             guard let context = CGContext(data: nil, width: canvasWidth, height: canvasHeight, bitsPerComponent: 8, bytesPerRow: 0, space: PoCGColorSpaceGetDeviceRGB, bitmapInfo: CGBitmapInfo.byteOrder32Host.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue) else { return nil }
             context.draw(decoded, in: CGRect(x: 0, y: CGFloat(canvasHeight) - firstFrameSize.height, width: firstFrameSize.width, height: firstFrameSize.height))
             guard let extendedImage = context.makeImage() else { return nil }
-            guard let frameData = PoCGImageCreateEncodedData(imageRef: extendedImage, type: .png, quality: 1) else { return nil }
+            guard let frameData = extendedImage.encodedData(type: .png, quality: 1) else { return nil }
             pngDatas[0] = frameData
         }
         
@@ -317,8 +286,8 @@ final class PoImageEncoder {
         var apngSequenceIndex: UInt32 = 0
         
         let header = UnsafeMutablePointer<UInt32>.allocate(capacity: 2)
-        header[0] = po_four_cc(c1: 0x89, c2: 0x50, c3: 0x4E, c4: 0x47)
-        header[1] = po_four_cc(c1: 0x0D, c2: 0x0A, c3: 0x1A, c4: 0x0A)
+        header[0] = po_four_num(c1: 0x89, c2: 0x50, c3: 0x4E, c4: 0x47)
+        header[1] = po_four_num(c1: 0x0D, c2: 0x0A, c3: 0x1A, c4: 0x0A)
         header.withMemoryRebound(to: UInt8.self, capacity: 8) { (pt) -> Void in
             result.append(pt, count: 8)
         }
@@ -328,12 +297,12 @@ final class PoImageEncoder {
         for i in 0..<Int(info.pointee.chunk_num) {
             let chunk = info.pointee.chunks![i]
             
-            if !insertBefore && chunk.fourcc == po_four_cc(c1: 0x49, c2: 0x44, c3: 0x41, c4: 0x54) { // IDAT
+            if !insertBefore && chunk.fourcc == po_four_cc(c1: "I", c2: "D", c3: "A", c4: "T") { // IDAT
                 insertBefore = true
                 // insert acTL
                 let acTL = UnsafeMutableRawPointer.allocate(byteCount: 20, alignment: MemoryLayout<UInt8>.stride)
                 acTL.storeBytes(of: po_swap_endian_uint32(value: 8), toByteOffset: 0, as: UInt32.self) // length
-                acTL.storeBytes(of: po_four_cc(c1: 0x61, c2: 0x63, c3: 0x54, c4: 0x4C), toByteOffset: 4, as: UInt32.self) // fourcc
+                acTL.storeBytes(of: po_four_cc(c1: "a", c2: "c", c3: "T", c4: "L"), toByteOffset: 4, as: UInt32.self) // fourcc
                 acTL.storeBytes(of: po_swap_endian_uint32(value: UInt32(pngDatas.count)), toByteOffset: 8, as: UInt32.self) // num frames
                 acTL.storeBytes(of: po_swap_endian_uint32(value: UInt32(loopCount)), toByteOffset: 12, as: UInt32.self) // num plays
                 acTL.storeBytes(of: po_swap_endian_uint32(value: UInt32(crc32(0, acTL.advanced(by: 4).assumingMemoryBound(to: UInt8.self), 12))), toByteOffset: 16, as: UInt32.self) // crc32
@@ -351,7 +320,7 @@ final class PoImageEncoder {
                 
                 let fcTL = UnsafeMutableRawPointer.allocate(byteCount: 38, alignment: MemoryLayout<UInt8>.stride)
                 fcTL.storeBytes(of: po_swap_endian_uint32(value: 26), toByteOffset: 0, as: UInt32.self) // length
-                fcTL.storeBytes(of: po_four_cc(c1: 0x66, c2: 0x63, c3: 0x54, c4: 0x4C), toByteOffset: 4, as: UInt32.self) // fourcc
+                fcTL.storeBytes(of: po_four_cc(c1: "f", c2: "c", c3: "T", c4: "L"), toByteOffset: 4, as: UInt32.self) // fourcc
                 po_png_chunk_fcTL_write(fcTL: &chunk_fcTL, data: fcTL.advanced(by: 8))
                 fcTL.advanced(by: 34).assumingMemoryBound(to: UInt32.self).pointee = po_swap_endian_uint32(value: UInt32(crc32(0, fcTL.advanced(by: 4).assumingMemoryBound(to: UInt8.self), 30)))
                 result.append(fcTL.assumingMemoryBound(to: UInt8.self), count: 38)
@@ -360,7 +329,7 @@ final class PoImageEncoder {
                 apngSequenceIndex += 1
             }
             
-            if !insertAfter && insertBefore && chunk.fourcc != po_four_cc(c1: 0x49, c2: 0x44, c3: 0x41, c4: 0x54) {
+            if !insertAfter && insertBefore && chunk.fourcc != po_four_cc(c1: "I", c2: "D", c3: "A", c4: "T") {
                 insertAfter = true
                 // insert fcTL and fdAT
                 for i in 1..<pngDatas.count {
@@ -381,7 +350,7 @@ final class PoImageEncoder {
                     
                     let fcTL = UnsafeMutableRawPointer.allocate(byteCount: 38, alignment: MemoryLayout<UInt8>.stride)
                     fcTL.storeBytes(of: po_swap_endian_uint32(value: 26), toByteOffset: 0, as: UInt32.self) // length
-                    fcTL.storeBytes(of: po_four_cc(c1: 0x66, c2: 0x63, c3: 0x54, c4: 0x4C), toByteOffset: 4, as: UInt32.self) // fourcc
+                    fcTL.storeBytes(of: po_four_cc(c1: "f", c2: "c", c3: "T", c4: "L"), toByteOffset: 4, as: UInt32.self) // fourcc
                     po_png_chunk_fcTL_write(fcTL: &chunk_fcTL, data: fcTL.advanced(by: 8))
                     
                     fcTL.advanced(by: 34).assumingMemoryBound(to: UInt32.self).pointee = po_swap_endian_uint32(value: UInt32(crc32(0, fcTL.advanced(by: 4).assumingMemoryBound(to: UInt8.self), 30)))
@@ -392,14 +361,14 @@ final class PoImageEncoder {
                     
                     for d in 0..<Int(frame.pointee.chunk_num) {
                         let dchunk = frame.pointee.chunks![d]
-                        if dchunk.fourcc == po_four_cc(c1: 0x49, c2: 0x44, c3: 0x41, c4: 0x54) { // IDAT
+                        if dchunk.fourcc == po_four_cc(c1: "I", c2: "D", c3: "A", c4: "T") {
                             let tmp = UnsafeMutableRawPointer.allocate(byteCount: 4, alignment: MemoryLayout<UInt8>.stride)
                             defer { tmp.deallocate() }
                             
                             tmp.storeBytes(of: po_swap_endian_uint32(value: dchunk.length + 4), as: UInt32.self) // length
                             result.append(tmp.assumingMemoryBound(to: UInt8.self), count: 4)
                             
-                            tmp.storeBytes(of: po_four_cc(c1: 0x66, c2: 0x64, c3: 0x41, c4: 0x54), as: UInt32.self) // fourcc
+                            tmp.storeBytes(of: po_four_cc(c1: "f", c2: "d", c3: "A", c4: "T"), as: UInt32.self) // fourcc
                             result.append(tmp.assumingMemoryBound(to: UInt8.self), count: 4)
                             
                             tmp.storeBytes(of: po_swap_endian_uint32(value: apngSequenceIndex), as: UInt32.self) // data (sq)

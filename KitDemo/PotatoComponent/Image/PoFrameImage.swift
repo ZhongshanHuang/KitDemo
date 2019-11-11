@@ -8,22 +8,6 @@
 
 import UIKit
 
-/**
- An image to display frame-based animation.
- 
- @discussion It is a fully compatible `UIImage` subclass.
- It only support system image format such as png and jpeg.
- The animation can be played by YYAnimatedImageView.
- 
- Sample Code:
- 
- NSArray *paths = @[@"/ani/frame1.png", @"/ani/frame2.png", @"/ani/frame3.png"];
- NSArray *times = @[@0.1, @0.2, @0.1];
- YYFrameImage *image = [YYFrameImage alloc] initWithImagePaths:paths frameDurations:times repeats:YES];
- YYAnimatedImageView *imageView = [YYAnimatedImageView alloc] initWithImage:image];
- [view addSubView:imageView];
- */
-
 class PoFrameImage: UIImage {
     
     // MARK: - Properties

@@ -29,7 +29,7 @@ extension UIImage {
     func imageByDecoded() -> Self {
         if self.isDecodedForDisplay { return self }
         guard let imageRef = self.cgImage else { return self }
-        guard let newImageRef = PoCGImageCreateDecodedCopy(imageRef: imageRef, decodeForDispaly: true) else { return self }
+        guard let newImageRef = imageRef.copy(decodeForDispaly: true) else { return self }
         let newImage = type(of: self).init(cgImage: newImageRef, scale: self.scale, orientation: self.imageOrientation)
         newImage.isDecodedForDisplay = true
         return newImage

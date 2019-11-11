@@ -33,6 +33,9 @@
 		5BFD32AD229058F100A9A39E /* Bundle+extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD32AC229058F100A9A39E /* Bundle+extension.swift */; };
 		5BFD32AF2292D70000A9A39E /* Data+extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BFD32AE2292D70000A9A39E /* Data+extension.swift */; };
 		6C2920FF20F62B37007C48E8 /* PoDiskCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C2920FE20F62B37007C48E8 /* PoDiskCache.swift */; };
+		6C3556012378FA6A0002434B /* CGImage+PoImageCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C3556002378FA6A0002434B /* CGImage+PoImageCoder.swift */; };
+		6C355603237905F90002434B /* CGBitmapInfo+PoImageCoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C355602237905F90002434B /* CGBitmapInfo+PoImageCoder.swift */; };
+		6C35560523790C740002434B /* PoImagePNGDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C35560423790C740002434B /* PoImagePNGDecoder.swift */; };
 		6C52C57120F1FC1F00727D85 /* String+extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C52C57020F1FC1F00727D85 /* String+extension.swift */; };
 		6C5611C4213C329C00A6190E /* PoTextRubyAnnotation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C5611C3213C329C00A6190E /* PoTextRubyAnnotation.swift */; };
 		6C5611C6213D1E9E00A6190E /* PoTextRunDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C5611C5213D1E9E00A6190E /* PoTextRunDelegate.swift */; };
@@ -112,6 +115,9 @@
 		5BFD32AC229058F100A9A39E /* Bundle+extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+extension.swift"; sourceTree = "<group>"; };
 		5BFD32AE2292D70000A9A39E /* Data+extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Data+extension.swift"; sourceTree = "<group>"; };
 		6C2920FE20F62B37007C48E8 /* PoDiskCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoDiskCache.swift; sourceTree = "<group>"; };
+		6C3556002378FA6A0002434B /* CGImage+PoImageCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGImage+PoImageCoder.swift"; sourceTree = "<group>"; };
+		6C355602237905F90002434B /* CGBitmapInfo+PoImageCoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGBitmapInfo+PoImageCoder.swift"; sourceTree = "<group>"; };
+		6C35560423790C740002434B /* PoImagePNGDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoImagePNGDecoder.swift; sourceTree = "<group>"; };
 		6C52C57020F1FC1F00727D85 /* String+extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+extension.swift"; sourceTree = "<group>"; };
 		6C5611C3213C329C00A6190E /* PoTextRubyAnnotation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoTextRubyAnnotation.swift; sourceTree = "<group>"; };
 		6C5611C5213D1E9E00A6190E /* PoTextRunDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoTextRunDelegate.swift; sourceTree = "<group>"; };
@@ -204,9 +210,12 @@
 			isa = PBXGroup;
 			children = (
 				5BFD32982277171600A9A39E /* PoImageDecoder.swift */,
+				6C35560423790C740002434B /* PoImagePNGDecoder.swift */,
 				5BFD329A2277172300A9A39E /* PoImageEncoder.swift */,
 				5BFD329C2277176700A9A39E /* PoImageUtilities.swift */,
+				6C3556002378FA6A0002434B /* CGImage+PoImageCoder.swift */,
 				5BFD32A6228B22C100A9A39E /* UIImage+PoImageCoder.swift */,
+				6C355602237905F90002434B /* CGBitmapInfo+PoImageCoder.swift */,
 			);
 			path = Coder;
 			sourceTree = "<group>";
@@ -511,6 +520,8 @@
 				5B95525C2170FAF900D9CAF5 /* SortedSet.swift in Sources */,
 				5BFD32A7228B22C100A9A39E /* UIImage+PoImageCoder.swift in Sources */,
 				5BFD32992277171600A9A39E /* PoImageDecoder.swift in Sources */,
+				6C355603237905F90002434B /* CGBitmapInfo+PoImageCoder.swift in Sources */,
+				6C3556012378FA6A0002434B /* CGImage+PoImageCoder.swift in Sources */,
 				5B9C7A3C219FD67D00423850 /* PoTableView.swift in Sources */,
 				6C5611CA213E581F00A6190E /* PoTextParser.swift in Sources */,
 				6CFD6A51210238F800937955 /* PoTextAttribute.swift in Sources */,
@@ -523,6 +534,7 @@
 				5BFD329B2277172300A9A39E /* PoImageEncoder.swift in Sources */,
 				6CE1827C20BAD88F00317E57 /* PoHelper.swift in Sources */,
 				5B8BD8092315749400A387B4 /* KernViewController.swift in Sources */,
+				6C35560523790C740002434B /* PoImagePNGDecoder.swift in Sources */,
 				6CE1828520BC499600317E57 /* PoTextLine.swift in Sources */,
 				5BFD32AD229058F100A9A39E /* Bundle+extension.swift in Sources */,
 				5BC123DA223FCBBE00953C61 /* PoRWLock.swift in Sources */,
