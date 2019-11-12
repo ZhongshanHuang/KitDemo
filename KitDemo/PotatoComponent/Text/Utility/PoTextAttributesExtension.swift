@@ -12,7 +12,7 @@ extension NSAttributedString: NameSpaceCompatible {}
 
 extension NameSpaceWrapper where Base: NSAttributedString {
     
-    /* ======================================================================================================================= */
+    /* ======================================================================= */
     
     var attributes: Dictionary<NSAttributedString.Key, Any>? {
         return attributes(at: 0)
@@ -28,7 +28,7 @@ extension NameSpaceWrapper where Base: NSAttributedString {
         return base.attribute(attrName, at: index, effectiveRange: nil)
     }
     
-    /* ======================================================================================================================= */
+    /* ======================================================================= */
     
     // MARK: - font
     var font: UIFont? {
@@ -547,7 +547,7 @@ extension NameSpaceWrapper where Base: NSAttributedString {
 
 extension NameSpaceWrapper where Base: NSMutableAttributedString {
     
-    /* ======================================================================================================================= */
+    /* ======================================================================= */
     
     func configure(_ make: (NameSpaceWrapper) -> Void) {
         make(self)
@@ -574,7 +574,7 @@ extension NameSpaceWrapper where Base: NSMutableAttributedString {
         base.setAttributes(nil, range: range)
     }
     
-    /* ======================================================================================================================= */
+    /* ======================================================================= */
     
     // MARK: - font
     var font: UIFont? {

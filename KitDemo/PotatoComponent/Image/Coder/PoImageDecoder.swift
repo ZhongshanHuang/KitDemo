@@ -15,8 +15,8 @@ class PoImageFrame: NSCopying {
     var offsetX: Int = 0
     var offsetY: Int = 0
     var duration: TimeInterval = 0
-    var dispose: APNGDisposeMethod = .none
-    var blend: APNGBlendOperation = .source
+    var dispose: po_png_dispose_op = .none
+    var blend: po_png_blend_op = .source
     var image: UIImage?
     
     required init(image: UIImage? = nil) {
@@ -38,7 +38,7 @@ class PoImageFrame: NSCopying {
     }
 }
 
-private class _PoImageDecoderFrame: PoImageFrame {
+private final class _PoImageDecoderFrame: PoImageFrame {
     
     /// whether frame has alpha
     var hasAlpha: Bool = false
@@ -79,16 +79,16 @@ final class PoImageDecoder {
     
     // MARK: - Properties - [private]
     
-    private var lock: pthread_mutex_t = pthread_mutex_t()
-    private var sourceTypeDetected: Bool = false
-    private var source: CGImageSource?
-    private var apngSource: UnsafeMutablePointer<po_png_info>?
-    private var orientation: UIImage.Orientation = .up
-    private lazy var framesLock: DispatchSemaphore = DispatchSemaphore(value: 1)
-    private lazy var frames: [_PoImageDecoderFrame] = []
-    private var needBlend: Bool = false
-    private var blendFrameIndex: Int = 0
-    private var blendCanvas: CGContext?
+    private var _lock: pthread_mutex_t = pthread_mutex_t()
+    private var _sourceTypeDetected: Bool = false
+    private var _source: CGImageSource?
+    private var _apngSource: UnsafeMutablePointer<po_png_info>?
+    private var _orientation: UIImage.Orientation = .up
+    private lazy var _framesLock: DispatchSemaphore = DispatchSemaphore(value: 1)
+    private lazy var _frames: [_PoImageDecoderFrame] = []
+    private var _isNeededBlend: Bool = false
+    private var _blendFrameIndex: Int = 0
+    private var _blendCanvas: CGContext?
     
     // MARK: - Initializers
     
@@ -98,7 +98,7 @@ final class PoImageDecoder {
         
         var mutexattr = pthread_mutexattr_t()
         pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE)
-        pthread_mutex_init(&lock, &mutexattr)
+        pthread_mutex_init(&_lock, &mutexattr)
         pthread_mutexattr_destroy(&mutexattr)
     }
     
@@ -110,8 +110,8 @@ final class PoImageDecoder {
     }
     
     deinit {
-        pthread_mutex_destroy(&lock)
-        if apngSource != nil { po_png_info_release(apngSource!) }
+        pthread_mutex_destroy(&_lock)
+        if _apngSource != nil { po_png_info_release(_apngSource!) }
     }
     
     // MARK: - Methods
@@ -137,9 +137,9 @@ final class PoImageDecoder {
     @discardableResult
     func update(_ data: NSData, final: Bool) -> Bool {
         var result = false
-        pthread_mutex_lock(&lock)
+        pthread_mutex_lock(&_lock)
         result = _update(data, final: final)
-        pthread_mutex_unlock(&lock)
+        pthread_mutex_unlock(&_lock)
         return result
     }
     
@@ -152,9 +152,9 @@ final class PoImageDecoder {
      */
     func frame(at index: Int, decodeForDisplay: Bool) -> PoImageFrame? {
         var result: PoImageFrame?
-        pthread_mutex_lock(&lock)
+        pthread_mutex_lock(&_lock)
         result = _frame(at: index, decodeForDisplay: decodeForDisplay)
-        pthread_mutex_unlock(&lock)
+        pthread_mutex_unlock(&_lock)
         return result
     }
     
@@ -165,11 +165,11 @@ final class PoImageDecoder {
      */
     func frameDuration(at index: Int) -> TimeInterval {
         var result: TimeInterval = 0
-        _ = framesLock.wait(timeout: .distantFuture)
-        if index < frames.count {
-            result = frames[index].duration
+        _ = _framesLock.wait(timeout: .distantFuture)
+        if index < _frames.count {
+            result = _frames[index].duration
         }
-        framesLock.signal()
+        _framesLock.signal()
         return result
     }
     
@@ -182,9 +182,9 @@ final class PoImageDecoder {
      */
     func frameProperties(at index: Int) -> Dictionary<CFString, Any>? {
         var result: Dictionary<CFString, Any>?
-        pthread_mutex_lock(&lock)
+        pthread_mutex_lock(&_lock)
         result = _frameProperties(at: index)
-        pthread_mutex_unlock(&lock)
+        pthread_mutex_unlock(&_lock)
         return result
     }
     
@@ -194,9 +194,9 @@ final class PoImageDecoder {
      */
     var imageProperties: Dictionary<CFString, Any>? {
         var result: Dictionary<CFString, Any>?
-        pthread_mutex_lock(&lock)
+        pthread_mutex_lock(&_lock)
         result = _imageProperties()
-        pthread_mutex_unlock(&lock)
+        pthread_mutex_unlock(&_lock)
         return result
     }
     
@@ -213,7 +213,7 @@ final class PoImageDecoder {
         self.data = data
         
         let imageType = PoImageDetectType(data: data)
-        if sourceTypeDetected {
+        if _sourceTypeDetected {
             if imageType != type {
                 return false
             } else {
@@ -222,7 +222,7 @@ final class PoImageDecoder {
         } else {
             if data.count > 16 {
                 type = imageType
-                sourceTypeDetected = true
+                _sourceTypeDetected = true
                 _updateSource()
             }
         }
@@ -230,15 +230,15 @@ final class PoImageDecoder {
     }
     
     private func _frame(at index: Int, decodeForDisplay: Bool) -> PoImageFrame? {
-        if index >= frames.count { return nil }
-        let frame = frames[index].copy() as! _PoImageDecoderFrame
+        if index >= _frames.count { return nil }
+        let frame = _frames[index].copy() as! _PoImageDecoderFrame
         var decoded = false
         var extendToCanvas = false
         if type != .ico && decodeForDisplay { // ICO contains multi-size frame and should not extend to canvas.
             extendToCanvas = true
         }
         
-        if !needBlend {
+        if !_isNeededBlend {
             guard var imageRef = _newUnblendedImage(at: index, extendToCanvas: extendToCanvas, decoded: &decoded) else { return nil }
             if decodeForDisplay && !decoded {
                 if let imageRefDecoded = imageRef.copy(decodeForDispaly: true) {
@@ -246,7 +246,7 @@ final class PoImageDecoder {
                     decoded = true
                 }
             }
-            let image = UIImage(cgImage: imageRef, scale: scale, orientation: orientation)
+            let image = UIImage(cgImage: imageRef, scale: scale, orientation: _orientation)
             image.isDecodedForDisplay = decoded
             frame.image = image
             return frame
@@ -256,35 +256,35 @@ final class PoImageDecoder {
         if !_createBlendContextIfNeeded() { return nil }
         var imageRef: CGImage?
         
-        if blendFrameIndex != NSNotFound && blendFrameIndex + 1 == frame.index {
+        if _blendFrameIndex != NSNotFound && _blendFrameIndex + 1 == frame.index {
             imageRef = _newBlendedImage(with: frame)
-            blendFrameIndex = index
+            _blendFrameIndex = index
         } else { // should draw canvas from previous frame
-            blendFrameIndex = NSNotFound
-            blendCanvas?.clear(CGRect(x: 0, y: 0, width: self.width, height: self.height))
+            _blendFrameIndex = NSNotFound
+            _blendCanvas?.clear(CGRect(x: 0, y: 0, width: self.width, height: self.height))
             
             if frame.blendFromIndex == frame.index {
                 if let unblendImage = _newUnblendedImage(at: index, extendToCanvas: false, decoded: nil) {
-                    blendCanvas?.draw(unblendImage, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
-                imageRef = blendCanvas?.makeImage()
+                imageRef = _blendCanvas?.makeImage()
                 if frame.dispose == .background {
-                    blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
-                blendFrameIndex = index
+                _blendFrameIndex = index
             } else { // canvas is not ready
                 for i in frame.blendFromIndex...frame.index {
                     if i == frame.index {
                         if imageRef == nil { imageRef = _newBlendedImage(with: frame) }
                     } else {
-                        _blendImage(with: frames[i])
+                        _blendImage(with: _frames[i])
                     }
                 }
-                blendFrameIndex = index
+                _blendFrameIndex = index
             }
         }
         if imageRef == nil { return nil }
-        let image = UIImage(cgImage: imageRef!, scale: scale, orientation: orientation)
+        let image = UIImage(cgImage: imageRef!, scale: scale, orientation: _orientation)
         image.isDecodedForDisplay = true
         frame.image = image
         if extendToCanvas {
@@ -299,15 +299,15 @@ final class PoImageDecoder {
     }
     
     private func _frameProperties(at index: Int) -> Dictionary<CFString, Any>? {
-        if index >= frames.count { return nil }
-        if source == nil { return nil }
-        let properties = CGImageSourceCopyPropertiesAtIndex(source!, index, nil)
+        if index >= _frames.count { return nil }
+        if _source == nil { return nil }
+        let properties = CGImageSourceCopyPropertiesAtIndex(_source!, index, nil)
         return properties as? Dictionary<CFString, Any>
     }
     
     private func _imageProperties() -> Dictionary<CFString, Any>? {
-        if source == nil { return nil }
-        let properties = CGImageSourceCopyProperties(source!, nil)
+        if _source == nil { return nil }
+        let properties = CGImageSourceCopyProperties(_source!, nil)
         return properties as? Dictionary<CFString, Any>
     }
     
@@ -329,13 +329,13 @@ final class PoImageDecoder {
          ignore the ImageIO's APNG frame info. Typically the custom decoder is a bit
          faster than ImageIO.
          */
-        if apngSource != nil {
-            po_png_info_release(apngSource!)
-            apngSource = nil
+        if _apngSource != nil { // 数据不一定已经加载完成，所以需要重新解析，将之前的数据释放
+            po_png_info_release(_apngSource!)
+            _apngSource = nil
         }
         
         _updateSourceImageIO() // decode first frame
-        if frameCount == 0 { return } // png decode failed
+        if frameCount == 0 { return } // png decode failed or only one pic
         if !isFinalized { return } // ignore multi-frame before finalized
         
         guard let apng = po_png_info_create(data: data!.bytes, length: data!.length) else { return }
@@ -343,8 +343,8 @@ final class PoImageDecoder {
             po_png_info_release(apng)
             return // no animation
         }
-        if source != nil { // apng decode succeed, no longer need image source
-            source = nil
+        if _source != nil { // apng decode succeed, no longer need image source
+            _source = nil
         }
         
         let canvasWidth = apng.pointee.header.width
@@ -405,36 +405,36 @@ final class PoImageDecoder {
         self.height = Int(canvasHeight)
         self.frameCount = frames.count
         self.loopCount = Int(apng.pointee.apng_loop_num)
-        self.needBlend = needBlend
-        self.apngSource = apng
-        _ = framesLock.wait(timeout: .distantFuture)
-        self.frames = frames
-        framesLock.signal()
+        self._isNeededBlend = needBlend
+        self._apngSource = apng
+        _ = _framesLock.wait(timeout: .distantFuture)
+        self._frames = frames
+        _framesLock.signal()
     }
     
     private func _updateSourceImageIO() {
         self.width = 0
         self.height = 0
-        self.orientation = .up
+        self._orientation = .up
         self.loopCount = 0
-        _ = framesLock.wait(timeout: .distantFuture)
-        frames = []
-        framesLock.signal()
+        _ = _framesLock.wait(timeout: .distantFuture)
+        _frames = []
+        _framesLock.signal()
         
-        if source == nil {
+        if _source == nil {
             if isFinalized {
-                source = CGImageSourceCreateWithData(data! as CFData, nil)
+                _source = CGImageSourceCreateWithData(data! as CFData, nil)
             } else {
-                source = CGImageSourceCreateIncremental(nil)
-                if source != nil { CGImageSourceUpdateData(source!, data!, false) }
+                _source = CGImageSourceCreateIncremental(nil)
+                if _source != nil { CGImageSourceUpdateData(_source!, data!, false) }
             }
         } else {
-            CGImageSourceUpdateData(source!, data!, isFinalized)
+            CGImageSourceUpdateData(_source!, data!, isFinalized)
         }
         
-        guard let source1 = source else { return }
+        guard let source1 = _source else { return }
         
-        frameCount = CGImageSourceGetCount(source!)
+        frameCount = CGImageSourceGetCount(_source!)
         
         if frameCount == 0 { return }
         
@@ -485,31 +485,31 @@ final class PoImageDecoder {
                     self.width = width
                     self.height = height
                     if let value = properties[kCGImagePropertyOrientation] as? Int {
-                        self.orientation = PoUIImageOrientationFromEXITValue(value)
+                        self._orientation = PoUIImageOrientationFromEXITValue(value)
                     }
                 }
             }
         }
         
-        _ = framesLock.wait(timeout: .distantFuture)
-        self.frames = frames
-        framesLock.signal()
+        _ = _framesLock.wait(timeout: .distantFuture)
+        self._frames = frames
+        _framesLock.signal()
     }
     
     private func _createBlendContextIfNeeded() -> Bool {
-        if blendCanvas == nil {
-            blendFrameIndex = NSNotFound
-            blendCanvas = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: PoCGColorSpaceGetDeviceRGB, bitmapInfo: CGBitmapInfo.byteOrder32Host.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue)
+        if _blendCanvas == nil {
+            _blendFrameIndex = NSNotFound
+            _blendCanvas = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: PoCGColorSpaceGetDeviceRGB, bitmapInfo: CGBitmapInfo.byteOrder32Host.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue)
         }
-        return blendCanvas != nil
+        return _blendCanvas != nil
     }
     
     private func _newUnblendedImage(at index: Int, extendToCanvas: Bool, decoded: UnsafeMutablePointer<Bool>?) -> CGImage? {
         if !isFinalized && index > 0 { return nil }
-        if frames.count <= index { return nil }
-        let frame = frames[index]
+        if _frames.count <= index { return nil }
+        let frame = _frames[index]
         
-        if let source = source {
+        if let source = _source {
             var imageRef = CGImageSourceCreateImageAtIndex(source, index, [kCGImageSourceShouldCache: true] as CFDictionary)
             if imageRef != nil, extendToCanvas {
                 let width = imageRef!.width
@@ -533,9 +533,9 @@ final class PoImageDecoder {
             return imageRef
         }
         
-        if apngSource != nil {
+        if _apngSource != nil {
             var size: Int = 0
-            if let bytes = po_png_copy_frame_data_at_index(data: data!.bytes.assumingMemoryBound(to: UInt8.self), info: apngSource!, index: index, size: &size) {
+            if let bytes = po_png_copy_frame_data_at_index(data: data!.bytes.assumingMemoryBound(to: UInt8.self), info: _apngSource!, index: index, size: &size) {
                 guard let provider = CGDataProvider(dataInfo: bytes, data: bytes, size: size, releaseData: PoCGDataProviderReleaseDataCallback) else {
                     bytes.deallocate()
                     return nil
@@ -560,18 +560,18 @@ final class PoImageDecoder {
         if frame.dispose == .previous {
             // nothing
         } else if frame.dispose == .background {
-            blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+            _blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
         } else { // no dispose
             if frame.blend == .over {
                 let unblendImage = _newUnblendedImage(at: frame.index, extendToCanvas: false, decoded: nil)
                 if unblendImage != nil {
-                    blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
             } else {
-                blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                _blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 let unblendImage = _newUnblendedImage(at: frame.index, extendToCanvas: false, decoded: nil)
                 if unblendImage != nil {
-                    blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
             }
         }
@@ -581,61 +581,61 @@ final class PoImageDecoder {
         var cgImage: CGImage?
         if frame.dispose == .previous { // 显示完当前帧后，将画板恢复到当前帧的前一帧
             if frame.blend == .over { // 在前一帧的基础上画上当前帧
-                let previousImage = blendCanvas?.makeImage()
+                let previousImage = _blendCanvas?.makeImage()
                 let unblendImage = _newUnblendedImage(at: frame.index, extendToCanvas: false, decoded: nil)
                 if unblendImage != nil {
-                    blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
-                cgImage = blendCanvas?.makeImage()
-                blendCanvas?.clear(CGRect(x: 0, y: 0, width: width, height: height))
+                cgImage = _blendCanvas?.makeImage()
+                _blendCanvas?.clear(CGRect(x: 0, y: 0, width: width, height: height))
                 if previousImage != nil {
-                    blendCanvas?.draw(previousImage!, in: CGRect(x: 0, y: 0, width: width, height: height))
+                    _blendCanvas?.draw(previousImage!, in: CGRect(x: 0, y: 0, width: width, height: height))
                 }
             } else { // 在要画上当前帧的范围内先清除，然后再画上当前帧
-                let previousImage = blendCanvas?.makeImage()
+                let previousImage = _blendCanvas?.makeImage()
                 let unblendImage = _newUnblendedImage(at: frame.index, extendToCanvas: false, decoded: nil)
                 if unblendImage != nil {
-                    blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
-                    blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
-                cgImage = blendCanvas?.makeImage()
-                blendCanvas?.clear(CGRect(x: 0, y: 0, width: width, height: height))
+                cgImage = _blendCanvas?.makeImage()
+                _blendCanvas?.clear(CGRect(x: 0, y: 0, width: width, height: height))
                 if previousImage != nil {
-                    blendCanvas?.draw(previousImage!, in: CGRect(x: 0, y: 0, width: width, height: height))
+                    _blendCanvas?.draw(previousImage!, in: CGRect(x: 0, y: 0, width: width, height: height))
                 }
             }
         } else if frame.dispose == .background { // 画完当前帧显示后，将当前帧的范围清除
             if frame.blend == .over {
                 let unblendImage = _newUnblendedImage(at: frame.index, extendToCanvas: false, decoded: nil)
                 if unblendImage != nil {
-                    blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
-                cgImage = blendCanvas?.makeImage()
-                blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                cgImage = _blendCanvas?.makeImage()
+                _blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
             } else {
                 let unblendImage = _newUnblendedImage(at: frame.index, extendToCanvas: false, decoded: nil)
                 if unblendImage != nil {
-                    blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
-                    blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
-                cgImage = blendCanvas?.makeImage()
-                blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                cgImage = _blendCanvas?.makeImage()
+                _blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
             }
             
         } else { // no dispose
             if frame.blend == .over {
                 let unblendImage = _newUnblendedImage(at: frame.index, extendToCanvas: false, decoded: nil)
                 if unblendImage != nil {
-                    blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
-                cgImage = blendCanvas?.makeImage()
+                cgImage = _blendCanvas?.makeImage()
             } else {
                 let unblendImage = _newUnblendedImage(at: frame.index, extendToCanvas: false, decoded: nil)
                 if unblendImage != nil {
-                    blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
-                    blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.clear(CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
+                    _blendCanvas?.draw(unblendImage!, in: CGRect(x: frame.offsetX, y: frame.offsetY, width: frame.width, height: frame.height))
                 }
-                cgImage = blendCanvas?.makeImage()
+                cgImage = _blendCanvas?.makeImage()
             }
         }
         return cgImage

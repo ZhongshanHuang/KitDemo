@@ -136,7 +136,6 @@ func PoImageDetectType(data: NSData?) -> PoImageType {
     if lenth < 16 { return .unknown }
     
     let baseAddress = data.bytes
-    
     let magic4 = baseAddress.load(fromByteOffset: 0, as: UInt32.self)
     
     switch magic4 {

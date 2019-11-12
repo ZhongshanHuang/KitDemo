@@ -8,14 +8,16 @@
 
 import UIKit
 
-@objc protocol PoTableViewDataSource: NSObjectProtocol {
+@objc
+protocol PoTableViewDataSource: NSObjectProtocol {
     func tableView(_ tableView: PoTableView, numberOfRowsIn section: Int) -> Int
     func tableView(_ tableView: PoTableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
     
     @objc optional func numberOfSections(in tableView: PoTableView) -> Int
 }
 
-@objc protocol PoTableViewDelegate: UIScrollViewDelegate {
+@objc
+protocol PoTableViewDelegate: UIScrollViewDelegate {
     @objc optional func tableView(_ tableView: PoTableView, heightForRowAt indexPath: IndexPath) -> CGFloat
     @objc optional func tableView(_ tableView: PoTableView, heightForHeaderIn section: Int) -> CGFloat
     @objc optional func tableView(_ tableView: PoTableView, heightForFooterIn section: Int) -> CGFloat

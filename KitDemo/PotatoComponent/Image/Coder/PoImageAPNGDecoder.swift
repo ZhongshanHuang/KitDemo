@@ -1,5 +1,5 @@
 //
-//  PoImagePNGDecoder.swift
+//  PoImageAPNGDecoder.swift
 //  KitDemo
 //
 //  Created by 黄中山 on 2019/11/11.
@@ -86,41 +86,32 @@ import zlib
  of the PNG specification
  */
 
-/// Specifies how the output buffer should be changed at the end of the delay (before rendering the next frame).
-enum APNGDisposeMethod {
-    /// 不做任何事
-    /// is done on this frame before rendering the next; the contents of the output buffer are left as is
-    case none
-    /// 画完当前帧显示后，将当前帧的范围清除
-    /// the frame's region of the output buffer is to be cleared to fully transparent black before rendering the next frame.
-    case background
-    /// 显示完当前帧后，将画板恢复到当前帧的前一帧
-    /// the frame's region of the output buffer is to be reverted to the previous contents before rendering the next frame.If the first `fcTL` chunk uses a `dispose_op` of APNG_DISPOSE_OP_PREVIOUS it should be treated as APNG_DISPOSE_OP_BACKGROUND
-    case previous
-}
-
-/// Specifies whether the frame is to be alpha blended into the current output buffer content, or whether it should completely replace its region in the output buffer.
-enum APNGBlendOperation {
-    /// 在要画上当前帧的范围内先清除，然后再画上当前帧
-    case source //all color components of the frame, including alpha, overwrite the current contents of the frame's output buffer region.
-    /// 在前一帧的基础上画上当前帧
-    case over // the frame should be composited onto the output buffer based on its alpha, using a simple OVER operation as described in the "Alpha Channel Processing" section of the PNG specification
-}
-
 enum po_png_alpha_type: UInt32 {
     case paleete = 1
     case color = 2
     case alpha = 4
 }
 
+/// Specifies how the output buffer should be changed at the end of the delay (before rendering the next frame).
 enum po_png_dispose_op: UInt8 {
+    /// 不做任何事
+    /// is done on this frame before rendering the next; the contents of the output buffer are left as is
     case none = 0
+    /// 画完当前帧显示后，将当前帧的范围清除
+    /// the frame's region of the output buffer is to be cleared to fully transparent black before rendering the next frame.
     case background = 1
+    /// 显示完当前帧后，将画板恢复到当前帧的前一帧
+    /// the frame's region of the output buffer is to be reverted to the previous contents before rendering the next frame.If the first `fcTL` chunk uses a `dispose_op` of po_png_dispose_op_previous it should be treated as po_png_dispose_op_background
     case previous = 2
 }
 
+/// Specifies whether the frame is to be alpha blended into the current output buffer content, or whether it should completely replace its region in the output buffer.
 enum po_png_blend_op: UInt8 {
+    /// 在要画上当前帧的范围内先清除，然后再画上当前帧
+    /// all color components of the frame, including alpha, overwrite the current contents of the frame's output buffer region.
     case source = 0
+    /// 在前一帧的基础上画上当前帧
+    /// the frame should be composited onto the output buffer based on its alpha, using a simple OVER operation as described in the "Alpha Channel Processing" section of the PNG specification
     case over = 1
 }
 

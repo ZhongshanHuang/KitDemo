@@ -21,7 +21,9 @@ extension UIView {
         }
         let renderer = UIGraphicsImageRenderer(bounds: bounds, format: format)
         let image = renderer.image { (context) in
-            self.layer.render(in: context.cgContext)
+            UIGraphicsPushContext(context.cgContext)
+            self.drawHierarchy(in: self.bounds, afterScreenUpdates: false)
+            UIGraphicsPopContext()
         }
         return image
     }
