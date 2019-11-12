@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  TextViewController.swift
 //  KitDemo
 //
 //  Created by 黄中山 on 2018/5/21.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class TextViewController: UIViewController {
     
     var tableView: UITableView = UITableView(frame: .zero, style: .plain)
     
@@ -24,39 +24,12 @@ class ViewController: UIViewController {
         view.addSubview(tableView)
 
         tableView.register(Cell.self, forCellReuseIdentifier: "cell")
-//        test()
-//        let path = Bundle.main.path(forResource: "dribbble64_imageio", ofType: "png")
-//        let image = UIImage(contentsOfFile: path!)
-//        let new = PoCGImageCreateCopyWithOrientation(imageRef: image!.cgImage!, orientation: .left)
-//        print(new)
     }
-    
-    private func test() {
-//        let image = PoImage(named: "apng.png")
-//        let imageView = PoAnimatedImageView(image: PoImage(named: "huocai.gif"))
-//        imageView.image = image
-//        imageView.center = view.center
-//        view.addSubview(imageView)
-        
-//        let encode = PoImageEncoder(type: .png)
-//        for i in 1...4 {
-//            let path = Bundle.main.path(forResource: "\(i)", ofType: ".png")
-//            encode?.add(image: UIImage(named: "p\(i).png")!, duration: 1)
-//        }
-        
-//        let image = PoImage(data: encode!.encode()!)
-        
-        let image = PoImage(named: "beauty")
-        let imageView = PoAnimatedImageView(image: image)
-        imageView.center = view.center
-        view.addSubview(imageView)
-    }
-    
 }
 
 // MARK: - UITableViewDataSource, UITableViewDelegate
 
-extension ViewController: UITableViewDataSource, UITableViewDelegate {
+extension TextViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return DemoType.allCases.count

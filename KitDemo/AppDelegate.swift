@@ -19,11 +19,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.backgroundColor = UIColor.white
         
-        window?.rootViewController = UINavigationController(rootViewController: ViewController())
+        window?.rootViewController = BaseTabBarController()
         
-//        let fpsLabel = PoFPSLabel()
-//        fpsLabel.frame.origin.y = 20
-//        window?.addSubview(fpsLabel)
+        let fpsLabel = PoFPSLabel()
+        fpsLabel.frame.origin.y = 20
+        window?.addSubview(fpsLabel)
         
         window?.makeKeyAndVisible()
         return true

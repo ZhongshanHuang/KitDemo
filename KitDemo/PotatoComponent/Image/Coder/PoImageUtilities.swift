@@ -106,12 +106,6 @@ func PoImageByteAlign(size: size_t, alignment: size_t) -> size_t {
     return ((size + (alignment - 1)) / alignment) * alignment
 }
 
-/// - Returns: Convert degree to radians
-@inlinable
-func PoImageDegreesToRadians(degrees: CGFloat) -> CGFloat {
-    return degrees * CGFloat.pi / 180
-}
-
 /// System color space
 let PoCGColorSpaceGetDeviceRGB: CGColorSpace = CGColorSpaceCreateDeviceRGB()
 let PoCGColorSpaceGetDeviceGray: CGColorSpace = CGColorSpaceCreateDeviceGray()

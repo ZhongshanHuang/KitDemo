@@ -258,6 +258,10 @@ extension CGImage {
         let height = CGFloat(self.height)
         
         // bottom left coordinate system.
+        // http://www.cocoachina.com/articles/12021
+        // rotate正数是逆时针
+        // transform后面的先作用
+        // orientation是相机拍摄时的方向
         var transform = CGAffineTransform.identity
         var swapWidthAndHeight = false
         switch orientation {
