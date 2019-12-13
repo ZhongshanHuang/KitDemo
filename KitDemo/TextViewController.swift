@@ -86,6 +86,7 @@ class Cell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         lable.frame = bounds
+        lable.left = 20
         lable.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         contentView.addSubview(lable)
     }

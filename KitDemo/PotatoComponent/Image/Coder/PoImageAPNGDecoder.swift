@@ -580,11 +580,11 @@ func po_four_num(c1: UInt8, c2: UInt8, c3: UInt8, c4: UInt8) -> UInt32 {
     return value4 | value3 | value2 | value1
 }
 
-func po_four_cc(c1: Character, c2: Character, c3: Character, c4: Character) -> UInt32 {
-    let value1 = UInt32(c1.asciiValue ?? 0)
-    let value2 = UInt32(c2.asciiValue ?? 0) << 8
-    let value3 = UInt32(c3.asciiValue ?? 0) << 16
-    let value4 = UInt32(c4.asciiValue ?? 0) << 24
+func po_four_cc(c1: Unicode.Scalar, c2: Unicode.Scalar, c3: Unicode.Scalar, c4: Unicode.Scalar) -> UInt32 {
+    let value1 = c1.value
+    let value2 = c2.value << 8
+    let value3 = c3.value << 16
+    let value4 = c4.value << 24
     return value4 | value3 | value2 | value1
 }
 
@@ -592,8 +592,8 @@ func po_two_num(c1: UInt8, c2: UInt8) -> UInt16 {
     return ((UInt16(c1) & 0x00FF) << 8) | ((UInt16(c2) & 0xFF00) >> 8)
 }
 
-func po_two_cc(c1: Character, c2: Character) -> UInt16 {
-    return ((UInt16(c1.asciiValue ?? 0) & 0x00FF) << 8) | ((UInt16(c2.asciiValue ?? 0) & 0xFF00) >> 8)
+func po_two_cc(c1: Unicode.Scalar, c2: Unicode.Scalar) -> UInt16 {
+    return ((UInt16(c1.value) & 0x00FF) << 8) | ((UInt16(c2.value) & 0xFF00) >> 8)
 }
 
 func po_swap_endian_uint16(value: UInt16) -> UInt16 {

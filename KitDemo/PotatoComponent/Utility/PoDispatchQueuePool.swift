@@ -14,7 +14,7 @@ class PoDispatchContext {
     let name: String
     let queueCount: Int
     private var queues: [DispatchQueue]
-    private lazy var _sentinel: PoSentinel = PoSentinel()
+    private var _sentinel: PoSentinel = PoSentinel()
     
     init(name: String, queueCount: Int, qos: DispatchQoS) {
         self.name = name
