@@ -28,64 +28,64 @@ class PoCache {
     
     // MARK: - Methods
     
-    func containsObject(for key: String) -> Bool {
-        return memoryCache.containsObject(for: key) || diskCache.containsObject(for: key)
+    func containsObject(forKey key: String) -> Bool {
+        return memoryCache.containsObject(forKey: key) || diskCache.containsObject(forKey: key)
     }
     
-    func containsObject(for key: String, completion: @escaping (String, Bool) -> Void) {
-        if memoryCache.containsObject(for: key) {
+    func containsObject(forKey key: String, completion: @escaping (String, Bool) -> Void) {
+        if memoryCache.containsObject(forKey: key) {
             DispatchQueue.global(qos: .default).async {
                 completion(key, true)
             }
         } else {
-            diskCache.containsObject(for: key, completion: completion)
+            diskCache.containsObject(forKey: key, completion: completion)
         }
     }
     
-    func object(for key: String) -> Data? {
-        if let value = memoryCache.object(for: key) {
+    func object(forKey key: String) -> Data? {
+        if let value = memoryCache.object(forKey: key) {
             return value
-        } else if let value = diskCache.object(for: key) {
-            memoryCache.setObject(value, for: key)
+        } else if let value = diskCache.object(forKey: key) {
+            memoryCache.setObject(value, forKey: key)
             return value
         } else {
             return nil
         }
     }
     
-    func object(for key: String, completion: @escaping (String, Data?) -> Void) {
-        if let value = memoryCache.object(for: key) {
+    func object(forKey key: String, completion: @escaping (String, Data?) -> Void) {
+        if let value = memoryCache.object(forKey: key) {
             DispatchQueue.global(qos: .default).async {
                 completion(key, value)
             }
         } else {
-            diskCache.object(for: key) { (key, value) in
-                if value != nil && !self.memoryCache.containsObject(for: key) {
-                    self.memoryCache.setObject(value!, for: key)
+            diskCache.object(forKey: key) { (key, value) in
+                if value != nil && !self.memoryCache.containsObject(forKey: key) {
+                    self.memoryCache.setObject(value!, forKey: key)
                 }
                 completion(key, value)
             }
         }
     }
     
-    func setObject(_ object: Data, for key: String) {
-        memoryCache.setObject(object, for: key, cost: object.count)
-        diskCache.setObject(object, for: key)
+    func setObject(_ object: Data, forKey key: String) {
+        memoryCache.setObject(object, forKey: key, cost: object.count)
+        diskCache.setObject(object, forKey: key)
     }
     
-    func setObject(_ object: Data, for key: String, completion: @escaping () -> Void) {
-        memoryCache.setObject(object, for: key, cost: object.count)
-        diskCache.setObject(object, for: key, completion: completion)
+    func setObject(_ object: Data, forKey key: String, completion: @escaping () -> Void) {
+        memoryCache.setObject(object, forKey: key, cost: object.count)
+        diskCache.setObject(object, forKey: key, completion: completion)
     }
     
-    func removeObject(for key: String) {
-        memoryCache.removeObject(for: key)
-        diskCache.removeObject(for: key)
+    func removeObject(forKey key: String) {
+        memoryCache.removeObject(forKey: key)
+        diskCache.removeObject(forKey: key)
     }
     
-    func removeObject(for key: String, completion: @escaping (String) -> Void) {
-        memoryCache.removeObject(for: key)
-        diskCache.removeObject(for: key, completion: completion)
+    func removeObject(forKey key: String, completion: @escaping (String) -> Void) {
+        memoryCache.removeObject(forKey: key)
+        diskCache.removeObject(forKey: key, completion: completion)
     }
     
     func removeAll() {

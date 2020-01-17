@@ -14,6 +14,7 @@ final class PoDiskCache {
     
     var name: String = ""
     let path: String
+    /// 阀值，data如果大于阀值则会存储到file system，否则存储到sqlite database
     let inlineThreshold: Int
     
     
@@ -62,65 +63,65 @@ final class PoDiskCache {
     
     // MARK: - Methods - [access]
     
-    func containsObject(for key: String) -> Bool {
+    func containsObject(forKey key: String) -> Bool {
         _ = _lock.wait(timeout: .distantFuture)
-        let contains = _kv.itemExists(for: key)
+        let contains = _kv.itemExists(forKey: key)
         _lock.signal()
         return contains
     }
     
-    func containsObject(for key: String, completion: @escaping (String, Bool) -> Void) {
+    func containsObject(forKey key: String, completion: @escaping (String, Bool) -> Void) {
         _queue.async { [weak self] in
             guard let strongSelf = self else { completion(key, false); return }
-            let contains = strongSelf.containsObject(for: key)
+            let contains = strongSelf.containsObject(forKey: key)
             completion(key, contains)
         }
     }
     
-    func object(for key: String) -> Data? {
+    func object(forKey key: String) -> Data? {
         _ = _lock.wait(timeout: .distantFuture)
-        let item = _kv.getItem(for: key)
+        let item = _kv.item(forKey: key)
         _lock.signal()
         
         return item?.value
     }
     
-    func object(for key: String, completion: @escaping (String, Data?) -> Void) {
+    func object(forKey key: String, completion: @escaping (String, Data?) -> Void) {
         _queue.async { [weak self] in
             guard let strongSelf = self else { completion(key, nil); return }
-            let data = strongSelf.object(for: key)
+            let data = strongSelf.object(forKey: key)
             completion(key, data)
         }
     }
     
-    func setObject(_ object: Data, for key: String) {
+    func setObject(_ object: Data, forKey key: String) {
         var filename: String?
         if object.count > inlineThreshold {
             filename = key.md5
         }
         _ = _lock.wait(timeout: .distantFuture)
-        _kv.saveItem(with: key, value: object, filename: filename, extendedData: nil)
+        _kv.saveItem(withKey: key, value: object, filename: filename, extendedData: nil)
         _lock.signal()
     }
     
-    func setObject(_ object: Data, for key: String, completion: @escaping () -> Void) {
+    func setObject(_ object: Data, forKey key: String, completion: @escaping () -> Void) {
         _queue.async { [weak self] in
             guard let strongSelf = self else { completion(); return }
-            strongSelf.setObject(object, for: key)
+            strongSelf.setObject(object, forKey: key)
             completion()
         }
     }
     
-    func removeObject(for key: String) {
+    func removeObject(forKey key: String) {
         _ = _lock.wait(timeout: .distantFuture)
-        _kv.removeItem(for: key)
+        _kv.removeItem(forKey: key)
         _lock.signal()
     }
     
-    func removeObject(for key: String, completion: @escaping (String) -> Void) {
+    func removeObject(forKey key: String, completion: @escaping (String) -> Void) {
         _queue.async { [weak self] in
             guard let strongSelf = self else { completion(key); return }
-            strongSelf.removeObject(for: key)
+            strongSelf.removeObject(forKey: key)
             completion(key)
         }
     }
@@ -150,7 +151,7 @@ final class PoDiskCache {
     
     func totalCount() -> Int {
         _ = _lock.wait(timeout: .distantFuture)
-        let count = _kv.getItemsCount()
+        let count = _kv.itemsCount()
         _lock.signal()
         return count
     }
@@ -165,7 +166,7 @@ final class PoDiskCache {
     
     func totalCost() -> Int {
         _ = _lock.wait(timeout: .distantFuture)
-        let cost = _kv.getItemsSize()
+        let cost = _kv.itemsSize()
         _lock.signal()
         return cost
     }
@@ -281,7 +282,7 @@ final class PoDiskCache {
     
     private func _trimToFreeDiskSpace(_ space: Int) {
         if space == 0 { return }
-        let totalBytes = _kv.getItemsSize()
+        let totalBytes = _kv.itemsSize()
         if totalBytes <= 0 { return }
         let diskFreeBytes = _freeSpaceInDisk()
         if diskFreeBytes < 0 { return }

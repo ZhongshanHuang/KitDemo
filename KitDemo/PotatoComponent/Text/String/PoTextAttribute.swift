@@ -75,7 +75,7 @@ struct PoTextLineStyle : OptionSet {
     static let thick: PoTextLineStyle = PoTextLineStyle(rawValue: 0x02)  //(━━━━━━)
     static let double: PoTextLineStyle = PoTextLineStyle(rawValue: 0x09) //(══════)
     
-    // style pattern (bitmask: 0xF00)
+    // style pattern (bitmask: 0xF00) must work with (single|double|thick) together
     static let patternMask = PoTextLineStyle(rawValue: 0xF00)
     static let patternDot = PoTextLineStyle(rawValue: 0x100)           //(‑ ‑ ‑ ‑ ‑)
     static let patternDash = PoTextLineStyle(rawValue: 0x200)          //(— — — — —)

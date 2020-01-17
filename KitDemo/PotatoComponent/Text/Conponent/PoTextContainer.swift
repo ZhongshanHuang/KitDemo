@@ -35,8 +35,8 @@ extension PoTextContainer {
 }
 
 final class PoTextContainer: NSCopying {
-    
-    static let maxSize: CGSize = CGSize(width: 0x100000, height: 0x100000)
+    /// 系统默认的maxSize，十进制：65536
+    static let maxSize: CGSize = CGSize(width: 0x10000, height: 0x10000)
     
     // MARK: - Properties - [public]
     

@@ -57,6 +57,7 @@
 		6CA5BCBB237A5A5B009F1184 /* BaseTabBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA5BCBA237A5A5B009F1184 /* BaseTabBarController.swift */; };
 		6CA5BCBD237A5A87009F1184 /* ImageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA5BCBC237A5A87009F1184 /* ImageViewController.swift */; };
 		6CA7AB612116810600ED260E /* PoTextUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CA7AB602116810600ED260E /* PoTextUtilities.swift */; };
+		6CBE487923C2D81B006F21E9 /* PoSQLite.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CBE487823C2D81B006F21E9 /* PoSQLite.swift */; };
 		6CBE573920FF940200ADDE34 /* PoTextAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CBE573820FF940200ADDE34 /* PoTextAttachment.swift */; };
 		6CE1823F20B3203000317E57 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE1823E20B3203000317E57 /* AppDelegate.swift */; };
 		6CE1824120B3203000317E57 /* TextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE1824020B3203000317E57 /* TextViewController.swift */; };
@@ -144,6 +145,7 @@
 		6CA5BCBA237A5A5B009F1184 /* BaseTabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseTabBarController.swift; sourceTree = "<group>"; };
 		6CA5BCBC237A5A87009F1184 /* ImageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageViewController.swift; sourceTree = "<group>"; };
 		6CA7AB602116810600ED260E /* PoTextUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoTextUtilities.swift; sourceTree = "<group>"; };
+		6CBE487823C2D81B006F21E9 /* PoSQLite.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoSQLite.swift; sourceTree = "<group>"; };
 		6CBE573820FF940200ADDE34 /* PoTextAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoTextAttachment.swift; sourceTree = "<group>"; };
 		6CE1823B20B3203000317E57 /* KitDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KitDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6CE1823E20B3203000317E57 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -283,6 +285,7 @@
 				6CA5BCA5237A44C9009F1184 /* PoCollectionViewMasonryLayout.swift */,
 				6CA5BCA6237A44C9009F1184 /* CTView.swift */,
 				6CA5BCB8237A4529009F1184 /* ImageDownsample.swift */,
+				6CBE487823C2D81B006F21E9 /* PoSQLite.swift */,
 			);
 			path = Other;
 			sourceTree = "<group>";
@@ -574,6 +577,7 @@
 				6CA5BCBB237A5A5B009F1184 /* BaseTabBarController.swift in Sources */,
 				6CA5BCAE237A44C9009F1184 /* Thread+extension.swift in Sources */,
 				921EB1C1230E9FD300FF5D88 /* PoTextNameSpaceCompatible.swift in Sources */,
+				6CBE487923C2D81B006F21E9 /* PoSQLite.swift in Sources */,
 				6C967C7C20CEC58300FB82DA /* PoFPSLabel.swift in Sources */,
 				5BFD329D2277176700A9A39E /* PoImageUtilities.swift in Sources */,
 				6CFD6A4D2101E0FC00937955 /* PoTextInput.swift in Sources */,

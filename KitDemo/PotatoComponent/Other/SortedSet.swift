@@ -53,9 +53,21 @@ extension SortedArray {
     
     /// 查找element的索引
     func index(of element: Element) -> Int? {
-        let index = self.index(for: element)
-        guard index < count, storage[index] == element else { return nil }
-        return index
+        var low = 0
+        var up = count - 1
+        var mid = 0
+        while low <= up {
+            mid = (up - low) / 2 + low
+            let val = self[mid]
+            if element < val {
+                up = mid - 1
+            } else if element > val {
+                low = mid + 1
+            } else {
+                return mid
+            }
+        }
+        return nil
     }
     
     /// 是否包含element
@@ -162,9 +174,9 @@ extension OrderedSet {
     }
 }
 
-/* ============================================================================================================================================ */
-/* https://github.com/apple/swift/blob/master/test/Prototypes/Algorithms.swift                                                                                                                                             */
-/* ============================================================================================================================================ */
+/* ============================================================================================= */
+/* https://github.com/apple/swift/blob/master/test/Prototypes/Algorithms.swift                  */
+/* ============================================================================================ */
 
 //protocol MutableCollectionAlgorithms: MutableCollection where SubSequence: MutableCollectionAlgorithms {
 //    @discardableResult

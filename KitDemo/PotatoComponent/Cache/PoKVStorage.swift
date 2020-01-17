@@ -65,11 +65,11 @@ final class PoKVStorageItem {
 final class PoKVStorage {
     
     enum StorageType {
-        /** The value is stored as a file in file system. */
+        /// The value is stored as a file in file system.
         case file
-        /** The value is stored in sqlite with blob type. */
+        /// The value is stored in sqlite with blob type.
         case sqlite
-        /** The value is stored in file system or sqlite based on your choice. */
+        /// The value is stored in file system or sqlite based on your choice.
         case mixed
     }
     
@@ -143,25 +143,25 @@ final class PoKVStorage {
             PoDebugPrint("PoKVStorageItem.value can't be nil.")
             return false
         }
-        return saveItem(with: item.key, value: item.value!, filename: item.filename, extendedData: item.extendedData)
+        return saveItem(withKey: item.key, value: item.value!, filename: item.filename, extendedData: item.extendedData)
     }
     
     @discardableResult
-    func saveItem(with key: String, value: Data, filename: String? = nil, extendedData: Data? = nil) -> Bool {
+    func saveItem(withKey key: String, value: Data, filename: String? = nil, extendedData: Data? = nil) -> Bool {
         if key.isEmpty || value.isEmpty { return false }
         if storageType == .file && filename.isEmpty { return false }
         
         if !filename.isEmpty {
-            if !_fileWrite(with: key, data: value) { return false }
+            if !_fileWrite(withFilename: key, data: value) { return false }
             if !_dbSave(key: key, value: nil, filename: filename, extendedData: extendedData) {
-                _fileDelete(with: filename!)
+                _fileDelete(withFilename: filename!)
                 return false
             }
             return true
         } else {
             if storageType != .sqlite {
                 if let filename = _dbGetFilename(with: key) {
-                    _fileDelete(with: filename)
+                    _fileDelete(withFilename: filename)
                 }
             }
             return _dbSave(key: key, value: value, filename: nil, extendedData: extendedData)
@@ -173,7 +173,7 @@ final class PoKVStorage {
     // MARK: - Methods - [remove item]
     
     @discardableResult
-    func removeItem(for key: String) -> Bool {
+    func removeItem(forKey key: String) -> Bool {
         if key.isEmpty { return false }
         
         switch storageType {
@@ -181,13 +181,13 @@ final class PoKVStorage {
             return _dbDeleteItem(with: key)
         case .file, .mixed:
             if let filename = _dbGetFilename(with: key) {
-                _fileDelete(with: filename)
+                _fileDelete(withFilename: filename)
             }
             return _dbDeleteItem(with: key)
         }
     }
     
-    func removeItem(for keys: [String]) -> Bool {
+    func removeItem(forKeys keys: [String]) -> Bool {
         if keys.isEmpty { return false }
         
         switch storageType {
@@ -196,7 +196,7 @@ final class PoKVStorage {
         case .file, .mixed:
                     if let filenames = _dbGetFilenameWithkeys(keys) {
                 for filename in filenames {
-                    _fileDelete(with: filename)
+                    _fileDelete(withFilename: filename)
                 }
             }
             return _dbDeleteItemWithkeys(keys)
@@ -216,7 +216,7 @@ final class PoKVStorage {
         case .file, .mixed:
             if let filenames = _dbGetFilenamesWithSizeLargerThan(size) {
                 for filename in filenames {
-                    if !_fileDelete(with: filename) {
+                    if !_fileDelete(withFilename: filename) {
                         return false
                     }
                 }
@@ -243,7 +243,7 @@ final class PoKVStorage {
         case .file, .mixed:
             if let filenames = _dbGetFilenamesWithTimeEarlierThan(time) {
                 for filename in filenames {
-                    if !_fileDelete(with: filename) {
+                    if !_fileDelete(withFilename: filename) {
                         return false
                     }
                 }
@@ -274,7 +274,7 @@ final class PoKVStorage {
                 for item in items {
                     if total > maxSize {
                         if let filename = item.filename {
-                            _fileDelete(with: filename)
+                            _fileDelete(withFilename: filename)
                         }
                         success = _dbDeleteItem(with: item.key)
                         total -= item.size
@@ -312,7 +312,7 @@ final class PoKVStorage {
                 for item in items {
                     if total > maxCount {
                         if let filename = item.filename {
-                            _fileDelete(with: filename)
+                            _fileDelete(withFilename: filename)
                         }
                         success = _dbDeleteItem(with: item.key)
                         total -= 1
@@ -353,7 +353,7 @@ final class PoKVStorage {
                     for item in items {
                         if left > 0 {
                             if let filename = item.filename {
-                                _fileDelete(with: filename)
+                                _fileDelete(withFilename: filename)
                             }
                             success = _dbDeleteItem(with: item.key)
                             left -= 1
@@ -379,14 +379,14 @@ final class PoKVStorage {
     
     // MARK: - Methods - [get items]
     
-    func getItem(for key: String) -> PoKVStorageItem? {
+    func item(forKey key: String) -> PoKVStorageItem? {
         if key.isEmpty { return nil }
         
         var item = _dbGetItem(with: key, excludeInlineData: false)
         if item != nil {
             _dbUpdateAccessTime(with: key)
             if let filename = item?.filename {
-                item?.value = _fileRead(with: filename)
+                item?.value = _fileRead(withFilename: filename)
                 if item?.value == nil {
                     _dbDeleteItem(with: key)
                     item = nil
@@ -396,20 +396,20 @@ final class PoKVStorage {
         return item
     }
     
-    func getItemInfo(for key: String) -> PoKVStorageItem? {
+    func itemInfo(forKey key: String) -> PoKVStorageItem? {
         if key.isEmpty { return nil }
         
         return _dbGetItem(with: key, excludeInlineData: true)
     }
     
-    func getItemValue(for key: String) -> Data? {
+    func itemValue(forKey key: String) -> Data? {
         if key.isEmpty { return nil }
         
         var data: Data?
         switch storageType {
         case .file:
            if let filename = _dbGetFilename(with: key) {
-               data = _fileRead(with: filename)
+               data = _fileRead(withFilename: filename)
                if data == nil {
                    _dbDeleteItem(with: key)
                }
@@ -418,7 +418,7 @@ final class PoKVStorage {
            data = _dbGetValue(with: key)
         case .mixed:
            if let filename = _dbGetFilename(with: key) {
-               data = _fileRead(with: filename)
+               data = _fileRead(withFilename: filename)
                if data == nil {
                    _dbDeleteItem(with: key)
                }
@@ -433,14 +433,14 @@ final class PoKVStorage {
         return data
     }
     
-    func getItemForKeys(_ keys: [String]) -> [PoKVStorageItem]? {
+    func items(forKeys keys: [String]) -> [PoKVStorageItem]? {
         if keys.isEmpty { return nil }
         
         if var items = _dbGetItemWithKeys(keys, excludeInlineData: false) {
             if storageType != .sqlite {
                 for (idx, item) in items.reversed().enumerated() {
                     if let filename = item.filename {
-                        item.value = _fileRead(with: filename)
+                        item.value = _fileRead(withFilename: filename)
                         if item.value == nil {
                             _dbDeleteItem(with: item.key)
                             items.remove(at: idx)
@@ -456,14 +456,14 @@ final class PoKVStorage {
         return nil
     }
     
-    func getItemInfoForKeys(_ keys: [String]) -> [PoKVStorageItem]? {
+    func itemInfos(forKeys keys: [String]) -> [PoKVStorageItem]? {
         if keys.isEmpty { return nil }
         
         return _dbGetItemWithKeys(keys, excludeInlineData: true)
     }
     
-    func getItemValueForKeys(_ keys: [String]) -> [String: Data]? {
-        guard let items = getItemForKeys(keys)  else { return nil }
+    func itemValuesForKeys(_ keys: [String]) -> [String: Data]? {
+        guard let items = items(forKeys: keys)  else { return nil }
         
         var kv = [String: Data]()
         for item in items {
@@ -478,16 +478,16 @@ final class PoKVStorage {
     
     // MARK: - Methods - [storages status]
     
-    func itemExists(for key: String) -> Bool {
+    func itemExists(forKey key: String) -> Bool {
         if key.isEmpty { return false }
         return _dbGetItemCount(with: key) > 0
     }
     
-    func getItemsCount() -> Int {
+    func itemsCount() -> Int {
         return _dbGetTotalItemCount()
     }
     
-    func getItemsSize() -> Int {
+    func itemsSize() -> Int {
         return _dbGetTotalItemSize()
     }
     
@@ -517,7 +517,7 @@ final class PoKVStorage {
 extension PoKVStorage {
     
     @discardableResult
-    private func _fileWrite(with filename: String, data: Data) -> Bool {
+    private func _fileWrite(withFilename filename: String, data: Data) -> Bool {
         let path = (_dataPath as NSString).appendingPathComponent(filename)
         do {
             try data.write(to: URL(fileURLWithPath: path))
@@ -529,7 +529,7 @@ extension PoKVStorage {
     }
     
     @discardableResult
-    private func _fileRead(with filename: String) -> Data? {
+    private func _fileRead(withFilename filename: String) -> Data? {
         let path = (_dataPath as NSString).appendingPathComponent(filename)
         do {
             return try Data(contentsOf: URL(fileURLWithPath: path))
@@ -540,7 +540,7 @@ extension PoKVStorage {
     }
     
     @discardableResult
-    private func _fileDelete(with filename: String) -> Bool {
+    private func _fileDelete(withFilename filename: String) -> Bool {
         let path = (_dataPath as NSString).appendingPathComponent(filename)
         do {
             try FileManager.default.removeItem(atPath: path)
@@ -723,7 +723,7 @@ extension PoKVStorage {
     
     private func _dbBindJoinedKeys(_ keys: [String], stmt: OpaquePointer, from index: Int) {
         for i in 0..<keys.count {
-            sqlite3_bind_text(stmt, Int32(index + i), keys[i], -1, nil)
+            sqlite3_bind_text(stmt, Int32(index + i), keys[i], -1, unsafeBitCast(OpaquePointer(bitPattern: -1), to: sqlite3_destructor_type.self))
         }
     }
     
