@@ -8,14 +8,17 @@
 
 import UIKit
 
-// 如果图片在Assets.xcassets中，无法正常加载
+// warning: 如果图片在Assets.xcassets中，无法正常加载
 
 class PoImage: UIImage {
     
-    // MARK: - Properties
-    private(set) var animatedImageType: PoImageType = .unknown
-    private(set) var animatedImageMemorySize: Int = 0
-    var animatedImageData: NSData? {
+    // MARK: - Properties - [public]
+    
+    /// image type. default is unknown
+    private(set) var type: PoImageType = .unknown
+    /// image decoded memory size byte
+    private(set) var memorySize: Int = 0
+    var data: NSData? {
         return _decoder?.data
     }
     var preloadAllAnimatedImageFrames: Bool = false {
@@ -40,10 +43,12 @@ class PoImage: UIImage {
         }
     }
     
+    // MARK: - Properties - [private]
+    
     private var _decoder: PoImageDecoder?
     private var preloadedFrames: [UIImage]?
-    private var _preloadedLock: DispatchSemaphore = DispatchSemaphore(value: 1)
     private var _bytesPerFrame: Int = 0
+    private lazy var _preloadedLock: DispatchSemaphore = DispatchSemaphore(value: 1)
     
     // MARK: - Initializers
     
@@ -57,7 +62,7 @@ class PoImage: UIImage {
         var scale = 1
         
         // If no extension, guess by system supported (same as UIImage).
-        let exts = ext.isEmpty ? ["", "png", "jpeg", "jpg", "gif", "apng", "webp"] : [ext]
+        let exts = ext.isEmpty ? ["png", "jpeg", "jpg", "gif", "apng", "webp", ""] : [ext]
         for s in Bundle.preferredScales {
             scale = s
             let scaleName = res.appendingNameScale(scale)
@@ -91,14 +96,15 @@ class PoImage: UIImage {
         if scale <= 0 { scale = UIScreen.main.scale }
         
         guard let decoder = try? PoImageDecoder.decoder(with: data as NSData, scale: scale),
-            let image = decoder.frame(at: 0, decodeForDisplay: true)?.image else { return nil }
+            let image = decoder.frame(at: 0, decodeForDisplay: true)?.image
+            else { return nil }
         
         self.init(cgImage: image.cgImage!, scale: decoder.scale, orientation: image.imageOrientation)
-        self.animatedImageType = decoder.type
+        self.type = decoder.type
         if decoder.frameCount > 1 {
             self._decoder = decoder
             self._bytesPerFrame = image.cgImage!.bytesPerRow * image.cgImage!.height
-            self.animatedImageMemorySize = self._bytesPerFrame * decoder.frameCount
+            self.memorySize = self._bytesPerFrame * decoder.frameCount
         }
         self.isDecodedForDisplay = true
     }

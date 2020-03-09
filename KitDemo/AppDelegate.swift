@@ -18,14 +18,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Override point for customization after application launch.
         window = UIWindow(frame: UIScreen.main.bounds)
         window?.backgroundColor = UIColor.white
-        
         window?.rootViewController = BaseTabBarController()
+        window?.makeKeyAndVisible()
         
         let fpsLabel = PoFPSLabel()
-        fpsLabel.frame.origin.y = 20
+        fpsLabel.frame.origin.y = 40
         window?.addSubview(fpsLabel)
-        
-        window?.makeKeyAndVisible()
         return true
     }
 

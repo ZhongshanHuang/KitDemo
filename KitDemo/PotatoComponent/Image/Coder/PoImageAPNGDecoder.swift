@@ -382,7 +382,7 @@ func po_png_info_create(data: UnsafeRawPointer, length: Int) -> UnsafeMutablePoi
     
     repeat {
         if chunk_num >= chunk_capacity {
-            chunks = unsafeBitCast(realloc(chunks, MemoryLayout<po_png_chunk_info>.stride * Int(chunk_capacity + chunk_realloc_num)), to: UnsafeMutablePointer<po_png_chunk_info>.self)
+            chunks = realloc(chunks, MemoryLayout<po_png_chunk_info>.stride * Int(chunk_capacity + chunk_realloc_num)).assumingMemoryBound(to: po_png_chunk_info.self)
             chunk_capacity += chunk_realloc_num
         }
         let chunk = chunks.advanced(by: Int(chunk_num))
