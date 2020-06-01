@@ -100,48 +100,48 @@ extension NameSpaceWrapper where Base: NSParagraphStyle {
         
         var sets = Array<CTParagraphStyleSetting>()
         
-        var ctLineSpacing = base.lineSpacing
-        let lineSpacingSet = CTParagraphStyleSetting(spec: .lineSpacingAdjustment, valueSize: MemoryLayout<CGFloat>.stride, value: &ctLineSpacing)
+        let ctLineSpacing = withUnsafePointer(to: base.lineSpacing) { UnsafeRawPointer($0) }
+        let lineSpacingSet = CTParagraphStyleSetting(spec: .lineSpacingAdjustment, valueSize: MemoryLayout<CGFloat>.stride, value: ctLineSpacing)
         sets.append(lineSpacingSet)
         
-        var ctAlignment = CTTextAlignment(rawValue: UInt8(base.alignment.rawValue))
-        let alignmentSet = CTParagraphStyleSetting(spec: .alignment, valueSize: MemoryLayout<CTTextAlignment>.stride, value: &ctAlignment)
+        let ctAlignment = withUnsafePointer(to: base.alignment.rawValue) { UnsafeRawPointer($0) }
+        let alignmentSet = CTParagraphStyleSetting(spec: .alignment, valueSize: MemoryLayout<CTTextAlignment>.stride, value: ctAlignment)
         sets.append(alignmentSet)
         
-        var ctFirstLineheadIndent = base.firstLineHeadIndent
-        let firstLineHeadIndentSet = CTParagraphStyleSetting(spec: .firstLineHeadIndent, valueSize: MemoryLayout<CGFloat>.stride, value: &ctFirstLineheadIndent)
+        let ctFirstLineheadIndent = withUnsafePointer(to: base.firstLineHeadIndent) { UnsafeRawPointer($0) }
+        let firstLineHeadIndentSet = CTParagraphStyleSetting(spec: .firstLineHeadIndent, valueSize: MemoryLayout<CGFloat>.stride, value: ctFirstLineheadIndent)
         sets.append(firstLineHeadIndentSet)
         
-        var ctHeadIndent = base.headIndent
-        let headIndentSet = CTParagraphStyleSetting(spec: .headIndent, valueSize: MemoryLayout<CGFloat>.stride, value: &ctHeadIndent)
+        let ctHeadIndent = withUnsafePointer(to: base.headIndent) { UnsafeRawPointer($0) }
+        let headIndentSet = CTParagraphStyleSetting(spec: .headIndent, valueSize: MemoryLayout<CGFloat>.stride, value: ctHeadIndent)
         sets.append(headIndentSet)
         
-        var ctTailIndent = base.tailIndent
-        let tailIndentSet = CTParagraphStyleSetting(spec: .tailIndent, valueSize: MemoryLayout<CGFloat>.stride, value: &ctTailIndent)
+        let ctTailIndent = withUnsafePointer(to: base.tailIndent) { UnsafeRawPointer($0) }
+        let tailIndentSet = CTParagraphStyleSetting(spec: .tailIndent, valueSize: MemoryLayout<CGFloat>.stride, value: ctTailIndent)
         sets.append(tailIndentSet)
         
-        var ctLineBreakMode = CTLineBreakMode(rawValue: UInt8(base.lineBreakMode.rawValue))
-        let lineBreakModeSet = CTParagraphStyleSetting(spec: .lineBreakMode, valueSize: MemoryLayout<CTLineBreakMode>.stride, value: &ctLineBreakMode)
+        let ctLineBreakMode = withUnsafePointer(to: base.lineBreakMode.rawValue) { UnsafeRawPointer($0) }
+        let lineBreakModeSet = CTParagraphStyleSetting(spec: .lineBreakMode, valueSize: MemoryLayout<CTLineBreakMode>.stride, value: ctLineBreakMode)
         sets.append(lineBreakModeSet)
         
-        var ctMinimumLineHeight = base.minimumLineHeight
-        let minimumLineHeightSet = CTParagraphStyleSetting(spec: .minimumLineHeight, valueSize: MemoryLayout<CGFloat>.stride, value: &ctMinimumLineHeight)
+        let ctMinimumLineHeight = withUnsafePointer(to: base.minimumLineHeight) { UnsafeRawPointer($0) }
+        let minimumLineHeightSet = CTParagraphStyleSetting(spec: .minimumLineHeight, valueSize: MemoryLayout<CGFloat>.stride, value: ctMinimumLineHeight)
         sets.append(minimumLineHeightSet)
         
-        var ctMaximumLineHeight = base.maximumLineHeight
-        let maximumLineHeightSet = CTParagraphStyleSetting(spec: .maximumLineHeight, valueSize: MemoryLayout<CGFloat>.stride, value: &ctMaximumLineHeight)
+        let ctMaximumLineHeight = withUnsafePointer(to: base.maximumLineHeight) { UnsafeRawPointer($0) }
+        let maximumLineHeightSet = CTParagraphStyleSetting(spec: .maximumLineHeight, valueSize: MemoryLayout<CGFloat>.stride, value: ctMaximumLineHeight)
         sets.append(maximumLineHeightSet)
         
-        var ctBaseWritingDirection = CTWritingDirection(rawValue: Int8(base.baseWritingDirection.rawValue))
-        let baseWritingDirectionSet = CTParagraphStyleSetting(spec: .baseWritingDirection, valueSize: MemoryLayout<CTWritingDirection>.stride, value: &ctBaseWritingDirection)
+        let ctBaseWritingDirection = withUnsafePointer(to: base.baseWritingDirection.rawValue) { UnsafeRawPointer($0) }
+        let baseWritingDirectionSet = CTParagraphStyleSetting(spec: .baseWritingDirection, valueSize: MemoryLayout<CTWritingDirection>.stride, value: ctBaseWritingDirection)
         sets.append(baseWritingDirectionSet)
         
-        var ctLineHeightMultiple = base.lineHeightMultiple
-        let lineHeightMultipleSet = CTParagraphStyleSetting(spec: .lineHeightMultiple, valueSize: MemoryLayout<CGFloat>.stride, value: &ctLineHeightMultiple)
+        let ctLineHeightMultiple = withUnsafePointer(to: base.lineHeightMultiple) { UnsafeRawPointer($0) }
+        let lineHeightMultipleSet = CTParagraphStyleSetting(spec: .lineHeightMultiple, valueSize: MemoryLayout<CGFloat>.stride, value: ctLineHeightMultiple)
         sets.append(lineHeightMultipleSet)
         
-        var ctParagraphSpacingBefore = base.paragraphSpacingBefore
-        let paragraphSpacingBeforeSet = CTParagraphStyleSetting(spec: .paragraphSpacingBefore, valueSize: MemoryLayout<CGFloat>.stride, value: &ctParagraphSpacingBefore)
+        let ctParagraphSpacingBefore = withUnsafePointer(to: base.paragraphSpacingBefore) { UnsafeRawPointer($0) }
+        let paragraphSpacingBeforeSet = CTParagraphStyleSetting(spec: .paragraphSpacingBefore, valueSize: MemoryLayout<CGFloat>.stride, value: ctParagraphSpacingBefore)
         sets.append(paragraphSpacingBeforeSet)
         
         var ctTabStops = [CTTextTab]()
@@ -149,11 +149,12 @@ extension NameSpaceWrapper where Base: NSParagraphStyle {
             let ctTab = CTTextTabCreate(CTTextAlignment(tab.alignment), Double(tab.location), tab.options as CFDictionary)
             ctTabStops.append(ctTab)
         }
-        let tabStopsSet = CTParagraphStyleSetting(spec: .tabStops, valueSize: MemoryLayout<[CTTextTab]>.stride, value: &ctTabStops)
+        let ctTabStopsP = ctTabStops.withUnsafeBytes({ $0.baseAddress })
+        let tabStopsSet = CTParagraphStyleSetting(spec: .tabStops, valueSize: MemoryLayout<[CTTextTab]>.stride, value: ctTabStopsP!)
         sets.append(tabStopsSet)
         
-        var ctDefaultTabInterval = base.defaultTabInterval
-        let defaultTabIntervalSet = CTParagraphStyleSetting(spec: .defaultTabInterval, valueSize: MemoryLayout<CGFloat>.stride, value: &ctDefaultTabInterval)
+        let ctDefaultTabInterval = withUnsafePointer(to: base.defaultTabInterval) { UnsafeRawPointer($0) }
+        let defaultTabIntervalSet = CTParagraphStyleSetting(spec: .defaultTabInterval, valueSize: MemoryLayout<CGFloat>.stride, value: ctDefaultTabInterval)
         sets.append(defaultTabIntervalSet)
         
         return CTParagraphStyleCreate(&sets, sets.count)

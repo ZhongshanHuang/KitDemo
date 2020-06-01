@@ -768,7 +768,7 @@ extension PoKVStorage {
     
     @discardableResult
     private func _dbUpdateAccessTime(with key: String) -> Bool {
-        let sql = "update manifest set last_access_time = ?1 where key = ?2;"
+        let sql = "update manifest set last_access_time = ?1 where key b= ?2;"
         guard let stmt = _dbPrepareStmt(sql) else { return false }
         
         sqlite3_bind_int(stmt, 1, Int32(time(nil)))

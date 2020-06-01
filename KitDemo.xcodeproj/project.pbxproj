@@ -137,7 +137,7 @@
 		6CA5BC9F237A44C9009F1184 /* String+extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "String+extension.swift"; sourceTree = "<group>"; };
 		6CA5BCA0237A44C9009F1184 /* Data+extension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Data+extension.swift"; sourceTree = "<group>"; };
 		6CA5BCA2237A44C9009F1184 /* SortedSet.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SortedSet.swift; sourceTree = "<group>"; };
-		6CA5BCA3237A44C9009F1184 /* PoHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PoHelper.swift; sourceTree = "<group>"; };
+		6CA5BCA3237A44C9009F1184 /* PoHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = PoHelper.swift; path = ../Utility/PoHelper.swift; sourceTree = "<group>"; };
 		6CA5BCA4237A44C9009F1184 /* PoTableView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PoTableView.swift; sourceTree = "<group>"; };
 		6CA5BCA5237A44C9009F1184 /* PoCollectionViewMasonryLayout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PoCollectionViewMasonryLayout.swift; sourceTree = "<group>"; };
 		6CA5BCA6237A44C9009F1184 /* CTView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CTView.swift; sourceTree = "<group>"; };

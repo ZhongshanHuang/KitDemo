@@ -35,7 +35,7 @@ private let kSQLiteQueuekey: DispatchSpecificKey<SQLiteQueue> = DispatchSpecific
 class SQLiteQueue {
     
     private lazy var serialQueue = DispatchQueue(label: "SQLite serial queue")
-    let db: SQLiteDatabase
+    private let db: SQLiteDatabase
     
     init(_ path: String, readOnly: Bool = false, busyTimeoutMillis: Int = 600000, openWAL: Bool = true) throws {
         self.db = try SQLiteDatabase(path, readOnly: readOnly, busyTimeoutMillis: busyTimeoutMillis)
@@ -98,7 +98,7 @@ class SQLiteQueue {
 
 class SQLiteDatabase {
     let path: String
-    var db = OpaquePointer(bitPattern: 0)
+    private var db = OpaquePointer(bitPattern: 0)
     
     init(_ path: String, readOnly: Bool = false, busyTimeoutMillis: Int = 600000) throws {
         self.path = path
@@ -424,7 +424,7 @@ class SQLiteStmt {
     }
     
     func columnDouble(position: Int) -> Double {
-        return Double(sqlite3_column_double(self.stat, Int32(position)))
+        return sqlite3_column_double(self.stat, Int32(position))
     }
     
     func columnInt32(position: Int) -> Int32 {

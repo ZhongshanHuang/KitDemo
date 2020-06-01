@@ -1629,7 +1629,7 @@ private func _drawRun(in context: CGContext, line: PoTextLine, run: CTRun, size:
         
         var fillColor = runAttrs[.foregroundColor] as? UIColor
         if fillColor == nil { fillColor = UIColor.black }
-        var strokeWidth = runAttrs[.strokeWidth] as? Float
+        let strokeWidth = runAttrs[.strokeWidth] as? Float
         
         do {
             context.saveGState()
@@ -2075,7 +2075,7 @@ private func _drawDecoration(in context: CGContext, layout: PoTextLayout, type: 
             let runStr = (layout.text.string as NSString).substring(with: runRange.nsRange) as NSString
             if PoTextUtilities.isLineBreakString(runStr) { continue }
             var position = CGPoint.zero
-            var width = CGFloat(CTRunGetTypographicBounds(run, .zero, nil, nil, nil))
+            let width = CGFloat(CTRunGetTypographicBounds(run, .zero, nil, nil, nil))
             
             var xHeight: CGFloat = 0
             var underlinePosition: CGFloat = 0
