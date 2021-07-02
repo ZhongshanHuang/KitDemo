@@ -14,7 +14,6 @@ class BaseTabBarController: UITabBarController {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
-        
         addChild(TextViewController(), title: "文字")
         addChild(ImageViewController(), title: "图片")
     }

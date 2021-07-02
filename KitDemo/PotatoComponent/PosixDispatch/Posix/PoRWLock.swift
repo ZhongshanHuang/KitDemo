@@ -11,27 +11,23 @@ import Foundation
 class PoRWLock {
     private lazy var lock = pthread_rwlock_t()
     
-    func rdLock() {
-        pthread_rwlock_rdlock(&lock)
-    }
-    
     func tryRDLock() -> Bool {
         return pthread_rwlock_tryrdlock(&lock) == 0
-    }
-    
-    func rdUnlock() {
-        pthread_rwlock_unlock(&lock)
     }
     
     func tryWRLock() -> Bool {
         return pthread_rwlock_trywrlock(&lock) == 0
     }
     
+    func rdLock() {
+        pthread_rwlock_rdlock(&lock)
+    }
+    
     func wrLock() {
         pthread_rwlock_wrlock(&lock)
     }
     
-    func wrUnlock() {
+    func unlock() {
         pthread_rwlock_unlock(&lock)
     }
     

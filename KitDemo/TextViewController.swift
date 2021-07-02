@@ -42,6 +42,8 @@ extension TextViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
         var vc: UIViewController!
         let type = DemoType.allCases[indexPath.row]
         switch type {
@@ -87,6 +89,7 @@ class Cell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         lable.frame = bounds
         lable.left = 20
+        lable.backgroundColor = .clear
         lable.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         contentView.addSubview(lable)
     }
